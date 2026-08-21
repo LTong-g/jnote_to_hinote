@@ -574,8 +574,8 @@ def _bbox_coords(points: list[dict[str, Any]], sx: float) -> tuple[float, float,
     return min(xs), max(xs), min(ys), max(ys)
 
 
-def _geometry_width_v051(d: float) -> float:
-    """恢复自 v0.5.1 基线、经过设备验证的几何宽度映射。"""
+def _geometry_width_tiered(d: float) -> float:
+    """使用历史设备验证结果确定几何宽度档位。"""
     d = float(d)
     if d < 4.0:
         return 2.0
@@ -606,7 +606,7 @@ def _build_geometry_body(rec: dict[str, Any], sx: float) -> tuple[bytes, int, bo
         return bytes(style) + body[108:], count, False
 
     shape_code = J_GEOMETRY_TO_HW_SHAPE.get((jt, subtype))
-    width = _geometry_width_v051(float(c.get("d", 3.0)))
+    width = _geometry_width_tiered(float(c.get("d", 3.0)))
 
     if shape_code is None:
         # 未知几何子类型：将可见路径保留为圆珠笔笔迹。

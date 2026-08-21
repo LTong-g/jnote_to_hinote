@@ -2,7 +2,7 @@
 
 Chinese documentation: [README.md](README.md)
 
-Convert **Jideos Jnotes / 云记 `.Jnotes`** notebooks into **Huawei Notes / 华为笔记 `.hinote`** while preserving native editable handwriting where the reverse-engineered formats allow it.
+Convert **Jideos Jnotes / 云记 `.Jnotes`** notebooks into **Huawei Notes / 华为笔记 `.hinote`** while preserving native editable handwriting within the currently validated format range.
 
 > **Validated compatibility:** Jnotes **3.2.3.2** → Huawei Notes **15.0.14.295**. Other versions are currently unverified.
 
@@ -14,8 +14,8 @@ Convert **Jideos Jnotes / 云记 `.Jnotes`** notebooks into **Huawei Notes / 华
 - Stroke color using Huawei's BGR float layout
 - Ballpoint, fountain/steel pen, HB pencil and highlighter mappings used by the validation notebook
 - Device-calibrated highlighter width and opacity
-- Supported Jnotes type 6 / type 7 geometry as Huawei geometry-style PENCILENGINE strokes
-- Translucent type 6/subtype 12 curves mapped to native Huawei highlighter strokes
+- Supported lines, curves, rectangles and circles mapped to native editable Huawei geometry where possible
+- Some translucent smooth curves mapped to native Huawei highlighter strokes while preserving transparency
 - Images and image-based stickers
 - Basic editable text boxes
 - Cover images
@@ -23,9 +23,9 @@ Convert **Jideos Jnotes / 云记 `.Jnotes`** notebooks into **Huawei Notes / 华
 
 ## v1.1.0: no Huawei reference note required
 
-Starting with v1.1.0, the converter generates the validated Huawei Notes 15.0.14.295 PENCILENGINE header, style records, point records, stroke links and supported geometry structures directly in code. You no longer need to create `reference.hinote` or `shape-reference.hinote`.
+Starting with v1.1.0, the converter generates the handwriting and geometry data required by Huawei Notes 15.0.14.295 directly in code. You no longer need to export `reference.hinote` or `shape-reference.hinote` from Huawei Notes.
 
-The legacy reference-based implementation remains unchanged in `src/jnotes2hinote/converter_v1_0_0.py`.
+The legacy v1.0.0 conversion core remains unchanged in `src/jnotes2hinote/converter_v1_0_0.py`.
 
 ## Installation
 
@@ -74,10 +74,10 @@ jnotes2hinote input.Jnotes test.hinote --pages 5
 ## Known limitations
 
 - **Paper tape:** no confirmed Huawei native equivalent; v1.1.0 skips it rather than rasterizing it silently.
-- **Audio:** Jnotes and Huawei attachment storage were reverse-engineered, but audio conversion is not enabled in v1.1.0.
-- **Typography:** text is editable, but font metrics, wrapping and line spacing may differ.
-- **Pen widths:** highlighter width is device-calibrated. Ordinary pen-family visual width equivalence is not fully calibrated.
-- **Geometry widths:** tested type 6/type 7 geometry uses the device-validated v0.5.1 width tiers rather than an unverified continuous formula.
+- **Audio:** Jnotes audio and Huawei attachment storage were studied, but audio conversion is not enabled in v1.1.0.
+- **Text layout:** text remains editable, but font appearance, wrapping and line spacing may differ.
+- **Ordinary pen widths:** highlighter width is device-calibrated; the final visual thickness of other pen types may differ from the source.
+- **Geometry widths:** supported geometry uses device-validated fixed width tiers (2, 4 or 8); every source width cannot be matched exactly.
 - **Compatibility:** only Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295 is device-tested.
 
 Read [docs/limitations.md](docs/limitations.md) before converting important notebooks, and keep backups of the original files.
@@ -106,7 +106,7 @@ pytest
 The versioned cores are kept separately:
 
 ```text
-src/jnotes2hinote/converter_v1_0_0.py  # frozen legacy reference-based core
+src/jnotes2hinote/converter_v1_0_0.py  # frozen legacy core that uses reference files
 src/jnotes2hinote/converter_v1_1_0.py  # current self-contained core
 ```
 

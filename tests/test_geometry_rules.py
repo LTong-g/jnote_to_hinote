@@ -3,7 +3,7 @@ import struct
 from jnotes2hinote.converter_v1_1_0 import (
     J_GEOMETRY_TO_HW_SHAPE,
     _build_geometry_body,
-    _geometry_width_v051,
+    _geometry_width_tiered,
 )
 
 
@@ -16,14 +16,14 @@ def test_device_tested_geometry_mapping():
 
 
 def test_restored_geometry_width_tiers():
-    assert _geometry_width_v051(3) == 2
-    assert _geometry_width_v051(4.93) == 4
-    assert _geometry_width_v051(12.72) == 8
-    assert _geometry_width_v051(30) == 8
+    assert _geometry_width_tiered(3) == 2
+    assert _geometry_width_tiered(4.93) == 4
+    assert _geometry_width_tiered(12.72) == 8
+    assert _geometry_width_tiered(30) == 8
 
 
 def test_translucent_type6_b12_is_highlighter():
-    # ARGB alpha=80，Jnotes 几何 d=30；这是经过设备验证的第 29 页案例。
+    # ARGB alpha=80，Jnotes 几何 d=30；这是经过设备验证的半透明曲线案例。
     c = {
         "a": 6, "b": 12, "d": 30.0, "c": (80 << 24) | 0x3366CC,
         "k": [
