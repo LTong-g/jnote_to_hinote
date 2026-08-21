@@ -1,10 +1,10 @@
-# Security and privacy
+# 安全与隐私
 
-This project processes local note archives that may contain sensitive personal content.
+本项目处理的本地笔记压缩包可能包含敏感的个人内容。
 
-- Conversion is local; the converter itself makes no network requests.
-- Back up both source and target notes before importing converted files.
-- Do not publish real `.Jnotes` / `.hinote` files in bug reports unless you have removed all private content.
-- The repository `.gitignore` intentionally excludes these file extensions by default.
+- 转换在本地完成；转换器本身不会发起网络请求。
+- 导入转换后的文件前，请同时备份源笔记和目标笔记。
+- 提交问题报告时不要发布真实的 `.Jnotes` / `.hinote` 文件，除非已删除全部私人内容。
+- 仓库的 `.gitignore` 默认会排除这些扩展名。
 
-For security-sensitive reports, avoid attaching personal note files. Describe the minimal reproducible binary structure instead.
+报告安全敏感问题时，请避免附加个人笔记文件，改为描述最小可复现的二进制结构。

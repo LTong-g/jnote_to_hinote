@@ -1,65 +1,63 @@
 # Jnotes2Hinote
 
-Convert **Jideos Jnotes / 云记 `.Jnotes`** notebooks into **Huawei Notes / 华为笔记 `.hinote`** while preserving native editable handwriting where the reverse-engineered formats allow it.
+将 **Jideos 云记 `.Jnotes`** 笔记转换为 **华为笔记 `.hinote`**，并在已逆向确认的格式范围内保留华为原生、可编辑的手写笔迹。
 
-> **Validated compatibility:** Jnotes **3.2.3.2** → Huawei Notes **15.0.14.295**. Other versions are currently unverified.
+> **已验证兼容版本：** 云记 **3.2.3.2** → 华为笔记 **15.0.14.295**。其他版本目前尚未验证。
 
-Chinese documentation: [README.zh-CN.md](README.zh-CN.md)
+## v1.0.0 可保留的内容
 
-## What v1.0.0 preserves
+- 多页笔记结构
+- 华为原生、可编辑的 PENCILENGINE 笔迹
+- 笔迹坐标和逐点压力
+- 华为使用的 BGR 浮点颜色布局
+- 测试笔记中使用的圆珠笔、钢笔、HB 铅笔和荧光笔映射
+- 经过设备标定的荧光笔宽度和透明度
+- 支持的 Jnotes type 6 / type 7 几何图形，并转换为华为几何样式的 PENCILENGINE 笔迹
+- 图片和图片型贴纸
+- 基本的可编辑文本框
+- 封面图片
+- 华为原生纸张背景
 
-- Multi-page notebook structure
-- Native editable Huawei PENCILENGINE handwriting
-- Stroke coordinates and per-point pressure
-- Stroke color using Huawei's BGR float layout
-- Ballpoint, fountain/steel pen, HB pencil and highlighter mappings used by the tested notebook
-- Device-calibrated highlighter width and opacity
-- Supported Jnotes type 6 / type 7 geometry as Huawei geometry-style PENCILENGINE strokes
-- Images and image-based stickers
-- Basic editable text boxes
-- Cover images
-- Huawei native paper backgrounds
+## 重要：必须准备参考 `.hinote` 文件
 
-## Important: reference `.hinote` files are required
+本项目不会附带华为二进制资产或私人笔记导出文件。转换器会从**你在自己的华为笔记中导出的测试笔记**提取 PENCILENGINE 结构模板。
 
-The public repository intentionally does **not** bundle Huawei binary assets or personal note exports. The converter extracts structural PENCILENGINE templates from notes that **you export from your own Huawei Notes installation**.
+你需要准备：
 
-You need:
+1. `reference.hinote`：一份包含以下示例的华为笔记：
+   - 钢笔（`pen_type=1`）
+   - 圆珠笔（`pen_type=2`）
+   - HB 铅笔（`pen_type=3`）
+   - 荧光笔（`pen_type=5`）
+2. `shape-reference.hinote`：源笔记包含支持的 Jnotes type 6/7 几何图形时需要。请在其中至少创建：
+   - 直线
+   - 曲线
+   - 矩形
+   - 圆/椭圆
 
-1. `reference.hinote` — a tiny Huawei note containing examples of:
-   - fountain/steel pen (`pen_type=1`)
-   - ballpoint (`pen_type=2`)
-   - HB pencil (`pen_type=3`)
-   - highlighter (`pen_type=5`)
-2. `shape-reference.hinote` — required when the source contains the supported Jnotes type 6/7 geometry. Create a Huawei note containing at least:
-   - straight line
-   - curve
-   - rectangle
-   - circle/ellipse
+详见 [docs/reference-files.md](docs/reference-files.md)。
 
-See [docs/reference-files.md](docs/reference-files.md).
-
-## Installation
+## 安装
 
 ```bash
 python -m venv .venv
 ```
 
-Windows:
+Windows：
 
 ```powershell
 .venv\Scripts\Activate.ps1
 pip install -e .
 ```
 
-macOS/Linux:
+macOS/Linux：
 
 ```bash
 source .venv/bin/activate
 pip install -e .
 ```
 
-## Usage
+## 使用
 
 ```bash
 jnotes2hinote input.Jnotes output.hinote \
@@ -68,7 +66,7 @@ jnotes2hinote input.Jnotes output.hinote \
   --report conversion-report.json
 ```
 
-Or:
+或者：
 
 ```bash
 python -m jnotes2hinote input.Jnotes output.hinote \
@@ -76,7 +74,7 @@ python -m jnotes2hinote input.Jnotes output.hinote \
   --shape-reference-hinote shape-reference.hinote
 ```
 
-Convert only the first 5 pages while testing:
+测试时只转换前 5 页：
 
 ```bash
 jnotes2hinote input.Jnotes test.hinote \
@@ -85,50 +83,50 @@ jnotes2hinote input.Jnotes test.hinote \
   --pages 5
 ```
 
-## Known limitations
+## 已知限制
 
-- **Paper tape:** no confirmed Huawei native equivalent; v1.0.0 skips it rather than rasterizing it silently.
-- **Audio:** Jnotes audio storage and Huawei generic attachment storage were reverse-engineered, but audio conversion is not enabled in v1.0.0.
-- **Typography:** text is editable, but font metrics, wrapping and line spacing may differ.
-- **Pen widths:** highlighter width is device-calibrated. Ordinary pen-family visual width equivalence is not fully calibrated.
-- **Compatibility:** only Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295 is device-tested.
+- **纸胶带：** 尚未确认华为原生等价物；v1.0.0 会跳过，而不会静默地把它栅格化。
+- **音频：** 已逆向确认 Jnotes 音频存储和华为通用附件存储，但 v1.0.0 尚未启用音频转换。
+- **排版：** 文本可以编辑，但字体度量、换行和行距可能不同。
+- **笔宽：** 荧光笔宽度已经过设备标定；普通笔类的视觉宽度尚未完成完整标定。
+- **兼容性：** 只有云记 3.2.3.2 → 华为笔记 15.0.14.295 经过设备验证。
 
-Read [docs/limitations.md](docs/limitations.md) before converting important notebooks.
+转换重要笔记前，请阅读 [docs/limitations.md](docs/limitations.md)。
 
-## Reverse-engineering notes
+## 逆向记录
 
-The repository documents the file-format findings used by the converter:
+仓库记录了转换器所依据的文件格式发现：
 
-- [Jnotes format](docs/format-jnotes.md)
-- [Huawei `.hinote` / PENCILENGINE format](docs/format-hinote.md)
-- [Mapping rules](docs/mapping.md)
-- [Compatibility](docs/compatibility.md)
-- [Reverse-engineering timeline](docs/reverse-engineering.md)
-- [v1.0.0 validation summary](docs/validation-v1.0.0.md)
+- [Jnotes 格式](docs/format-jnotes.md)
+- [华为 `.hinote` / PENCILENGINE 格式](docs/format-hinote.md)
+- [映射规则](docs/mapping.md)
+- [兼容性](docs/compatibility.md)
+- [逆向过程时间线](docs/reverse-engineering.md)
+- [v1.0.0 验证摘要](docs/validation-v1.0.0.md)
 
-## Safety / backups
+## 安全与备份
 
-Always keep the original `.Jnotes` and export/backup your Huawei Notes before importing converted files. This is an unofficial interoperability project based on reverse engineering, not a Huawei or Jideos product.
+请始终保留原始 `.Jnotes`，并在导入转换后的文件前导出/备份华为笔记。这是一个基于逆向工程的非官方互操作项目，不属于华为或 Jideos 产品。
 
-## Development
+## 开发
 
 ```bash
 pip install -e ".[dev]"
 pytest
 ```
 
-The v1.0.0 core is intentionally frozen in:
+v1.0.0 核心有意冻结在：
 
 ```text
 src/jnotes2hinote/converter_v1_0_0.py
 ```
 
-Future behavioral changes should use a new versioned core instead of rewriting the device-tested implementation.
+未来的行为变更应使用新的版本化核心，而不是重写经过设备验证的实现。
 
-## License
+## 许可证
 
-MIT. See [LICENSE](LICENSE).
+MIT，详见 [LICENSE](LICENSE)。
 
-## Disclaimer
+## 免责声明
 
-This project is independent and unofficial. It is not affiliated with, endorsed by, or sponsored by Jideos or Huawei. Product and company names are used only to describe file-format interoperability.
+本项目独立且非官方，与 Jideos 或华为不存在隶属、授权或赞助关系。产品和公司名称仅用于描述文件格式互操作性。

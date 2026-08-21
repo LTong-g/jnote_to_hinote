@@ -1,19 +1,19 @@
-# Jnotes → Huawei mapping rules in v1.0.0
+# v1.0.0 的 Jnotes → 华为映射规则
 
-These are the rules implemented by the frozen v1.0.0 converter core.
+以下是冻结的 v1.0.0 转换核心所实现的规则。
 
-## Pen types
+## 笔型
 
-| Jnotes type | Jnotes meaning | Huawei `pen_type` |
+| Jnotes 类型 | Jnotes 含义 | 华为 `pen_type` |
 |---:|---|---:|
-| 1 | Ballpoint | 2 |
-| 2 | Fountain/steel pen | 1 |
-| 3 | Highlighter | 5 |
-| 5 | Pencil | 3 (HB) |
+| 1 | 圆珠笔 | 2 |
+| 2 | 钢笔 | 1 |
+| 3 | 荧光笔 | 5 |
+| 5 | 铅笔 | 3（HB） |
 
-## Colors
+## 颜色
 
-Jnotes stores signed ARGB integers. Huawei Notes 15.0.14.295 stores tested stroke color floats in BGR order:
+Jnotes 存储有符号 ARGB 整数。华为笔记 15.0.14.295 将测试笔迹颜色浮点数按 BGR 顺序存储：
 
 ```text
 style+64 = B / 255
@@ -21,90 +21,90 @@ style+68 = G / 255
 style+72 = R / 255
 ```
 
-## Highlighter
+## 荧光笔
 
-Device-calibrated rules retained in v1.0.0:
+v1.0.0 保留的设备标定规则：
 
 ```text
-Huawei width = Jnotes d × 16 / 3
+华为宽度 = Jnotes d × 16 / 3
 style+76 = min(80/255, source_alpha/255)
 style+80 = min(80/255, source_alpha/255)
 ```
 
-Examples from the validated notebook:
+经过验证的笔记中的示例：
 
-| Jnotes `d` | Huawei width |
+| Jnotes `d` | 华为宽度 |
 |---:|---:|
 | 3 | 16 |
 | 3.68 | 19.6267 |
 | 6 | 32 |
 
-## Geometry
+## 几何图形
 
-The tested notebook used these mappings:
+经过测试的笔记使用了以下映射：
 
-| Jnotes | Meaning | Huawei shape code |
+| Jnotes | 含义 | 华为图形代码 |
 |---|---|---:|
-| type 6, `b=0` | regularized straight line | 0 |
-| type 6, `b=12` | regularized curve | 16 |
-| type 6, `b=4` | recognized ellipse | 10 |
-| type 7, `b=3` | rectangle | 7 |
-| type 7, `b=4` | circle / ellipse | 10 |
+| type 6, `b=0` | 规则化直线 | 0 |
+| type 6, `b=12` | 规则化曲线 | 16 |
+| type 6, `b=4` | 识别出的椭圆 | 10 |
+| type 7, `b=3` | 矩形 | 7 |
+| type 7, `b=4` | 圆/椭圆 | 10 |
 
-Geometry is rendered using Huawei ballpoint geometry records (`pen_type=2`).
+几何图形使用华为圆珠笔几何记录（`pen_type=2`）进行渲染。
 
-Final geometry width rule:
+最终几何宽度规则：
 
 ```text
-Huawei geometry width = Jnotes d / 3
+华为几何宽度 = Jnotes d / 3
 ```
 
-Unsupported type 6/type 7 subtypes are preserved as editable ballpoint-path fallback rather than being dropped.
+不支持的 type 6/type 7 子类型会保留为可编辑的圆珠笔路径回退，而不是直接丢弃。
 
-## Paper backgrounds
+## 纸张背景
 
-Huawei templates confirmed from a controlled note:
+通过受控笔记确认的华为模板：
 
-| Huawei background | Meaning |
+| 华为背景 | 含义 |
 |---|---|
-| `base1` | Blank |
-| `base4` | Wide horizontal lines |
-| `base5` | Narrow horizontal lines |
-| `base6` | Dots |
-| `base3` | Small/narrow grid |
-| `base2` | Medium/wide grid |
+| `base1` | 空白 |
+| `base4` | 宽横线 |
+| `base5` | 窄横线 |
+| `base6` | 点阵 |
+| `base3` | 小/窄方格 |
+| `base2` | 中/宽方格 |
 
-Jnotes mapping used by v1.0.0:
+v1.0.0 使用的 Jnotes 映射：
 
-- `White_Line_paper_1_Paper`, UI size 1–2 → `base5`
-- `White_Line_paper_1_Paper`, UI size 3+ → `base4`
-- other horizontal-line templates (including `v-narrow-line-white`) → `base4`
-- `White_Graph_Paper`, UI size 1–4 → `base3`
-- `White_Graph_Paper`, UI size 5+ → `base2`
+- `White_Line_paper_1_Paper`，界面尺寸 1–2 → `base5`
+- `White_Line_paper_1_Paper`，界面尺寸 3+ → `base4`
+- 其他横线模板（包括 `v-narrow-line-white`）→ `base4`
+- `White_Graph_Paper`，界面尺寸 1–4 → `base3`
+- `White_Graph_Paper`，界面尺寸 5+ → `base2`
 - `White_Wide_Grid_Paper` → `base2`
-- dotted paper → `base6`
-- blank / cover underneath → `base1`
+- 点阵纸 → `base6`
+- 空白纸/封面下方 → `base1`
 
-In controlled Jnotes samples, UI paper size can be derived from:
+在受控 Jnotes 样本中，界面纸张尺寸可以按以下方式从参数推导：
 
 ```text
-UI size = horParts + 3
+界面尺寸 = horParts + 3
 ```
 
-for the observed parameterized templates (`-2 → 1`, `0 → 3`, `3 → 6`).
+适用于已观察到的参数化模板（`-2 → 1`、`0 → 3`、`3 → 6`）。
 
-## Images and stickers
+## 图片和贴纸
 
-Jnotes PNG/JPEG image bytes are copied into Huawei `files/` and referenced by `elementType=1` page elements. Image-based stickers therefore use the same mapping.
+Jnotes PNG/JPEG 图片字节会复制到华为 `files/`，并由 `elementType=1` 页面元素引用。因此图片型贴纸使用相同映射。
 
-## Text
+## 文本
 
-Jnotes text is mapped to Huawei `elementType=0` with HTML-like rich-text markup for the supported attributes. Font metrics and wrapping are not guaranteed to match exactly.
+Jnotes 文本会映射到带有 HTML 风格富文本标记的华为 `elementType=0`，用于支持的属性。字体度量和换行不保证完全一致。
 
-## Paper tape
+## 纸胶带
 
-No confirmed Huawei native object. Frozen v1.0.0 skips Jnotes type 10 paper-tape strokes and reports how many were skipped.
+尚未确认华为原生对象。冻结的 v1.0.0 会跳过 Jnotes type 10 纸胶带笔迹，并报告跳过数量。
 
-## Audio
+## 音频
 
-Not enabled in v1.0.0.
+v1.0.0 未启用。

@@ -1,26 +1,26 @@
-# Compatibility
+# 兼容性
 
-## Device-tested matrix
+## 设备验证矩阵
 
-| Source app | Source version | Target app | Target version | Status |
+| 源应用 | 源版本 | 目标应用 | 目标版本 | 状态 |
 |---|---:|---|---:|---|
-| Jideos Jnotes / 云记 | **3.2.3.2** | Huawei Notes / 华为笔记 | **15.0.14.295** | **Device-tested** |
-| Jnotes | other | Huawei Notes | 15.0.14.295 | Unverified |
-| Jnotes | 3.2.3.2 | Huawei Notes | other | Unverified |
-| Jnotes | other | Huawei Notes | other | Unverified |
+| Jideos 云记 | **3.2.3.2** | 华为笔记 | **15.0.14.295** | **已设备验证** |
+| Jnotes | 其他 | 华为笔记 | 15.0.14.295 | 未验证 |
+| Jnotes | 3.2.3.2 | 华为笔记 | 其他 | 未验证 |
+| Jnotes | 其他 | 华为笔记 | 其他 | 未验证 |
 
-The binary layout described in this repository should not be assumed stable across app versions.
+本仓库描述的二进制布局不能假定在不同应用版本之间保持稳定。
 
-## What “device-tested” means
+## “已设备验证”的含义
 
-The reverse-engineering process generated `.hinote` files and imported them into Huawei Notes on a Huawei device. Tests included:
+逆向工程过程中生成了 `.hinote` 文件，并将其导入华为设备上的华为笔记。测试包括：
 
-- native editable strokes that could be selected and erased;
-- hundreds of strokes in one PENCILENGINE page;
-- a 171-page notebook with 44,828 strokes;
-- BGR color conversion;
-- highlighter width and opacity;
-- images, text and paper backgrounds;
-- Jnotes type 6 / type 7 geometry represented with Huawei geometry-style PENCILENGINE records.
+- 可以选择和擦除的原生可编辑笔迹；
+- 单个 PENCILENGINE 页面中的数百条笔迹；
+- 一本 171 页、包含 44,828 条笔迹的笔记；
+- BGR 颜色转换；
+- 荧光笔宽度和透明度；
+- 图片、文本和纸张背景；
+- 使用华为几何样式 PENCILENGINE 记录表示的 Jnotes type 6 / type 7 几何图形。
 
-This is not the same as exhaustive compatibility testing across devices or firmware builds.
+这不等同于跨设备或跨固件版本的穷举式兼容性测试。

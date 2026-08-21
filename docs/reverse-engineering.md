@@ -1,24 +1,24 @@
-# Reverse-engineering notes and validation milestones
+# 逆向工程记录与验证里程碑
 
-This document records the main findings behind v1.0.0 so that future changes can be evaluated against known device behavior.
+本文档记录 v1.0.0 背后的主要发现，便于未来变更与已知设备行为进行对照。
 
-## 1. Jnotes is not raster-only
+## 1. Jnotes 并非只能栅格化
 
-The tested `.Jnotes` archive contains plaintext stroke JSON with x/y/pressure, color, width and tool type. This made native handwriting migration possible.
+经过测试的 `.Jnotes` 压缩包包含带有 x/y/压力、颜色、宽度和工具类型的明文笔迹 JSON，因此可以迁移原生手写内容。
 
-## 2. First native handwriting proof of concept
+## 2. 首次原生手写概念验证
 
-A generated `.hinote` containing converted Jnotes handwriting was imported into Huawei Notes. The converted strokes could be selected with lasso and erased, proving that migration into Huawei native PENCILENGINE records was viable.
+将转换后的 Jnotes 手写内容写入生成的 `.hinote` 后导入华为笔记。转换后的笔迹可以使用套索选择并擦除，证明迁移到华为原生 PENCILENGINE 记录是可行的。
 
-## 3. Newer 108-byte style layout
+## 3. 更新后的 108 字节样式布局
 
-The target Huawei version used a 108-byte style record rather than the shorter layout assumed by some older public parsers.
+目标华为版本使用 108 字节样式记录，而不是一些旧版公开解析器假定的更短布局。
 
-## 4. The chain-pointer bug
+## 4. 链接指针错误
 
-Early generated pages physically contained hundreds of blocks but Huawei stopped rendering at an existing END boundary. Later, a whole-book build showed only the first stroke of almost every page.
+早期生成的页面在物理上包含数百个数据块，但华为会在已有的 END 边界停止渲染。之后一次整本笔记构建显示，几乎每页都只有第一条笔迹。
 
-The critical finding was that both the file header and every stroke tail form a linked structure. The root and continuation sizes must match the next stroke's point count:
+关键发现是：文件头和每条笔迹尾部共同形成一个链接结构。根链接和后续链接的尺寸必须匹配下一条笔迹的点数：
 
 ```text
 header+148 = first_count × 36 + 140
@@ -28,35 +28,35 @@ tail+16 = next_count × 36 + 140
 tail+48 = next_count × 36 + 20
 ```
 
-After rebuilding those links, a 688-stroke page and then the 171-page notebook displayed correctly.
+重建这些链接后，一个包含 688 条笔迹的页面以及随后整本 171 页笔记都能正确显示。
 
-## 5. BGR color order
+## 5. BGR 颜色顺序
 
-Writing source RGB into `style+64/+68/+72` produced swapped colors. Controlled Huawei samples showed that the target app interprets them as B, G, R.
+将源 RGB 写入 `style+64/+68/+72` 会产生颜色通道互换。受控华为样本显示，目标应用将其解释为 B、G、R。
 
-## 6. Highlighter opacity has two fields
+## 6. 荧光笔透明度有两个字段
 
-Setting only `style+80` changed the property shown after selection, but rendering stayed at the old opacity. Device tests showed that `style+76` affects actual rendering while `style+80` reflects the UI/selection property. v1.0.0 writes both.
+只设置 `style+80` 会改变选择后显示的属性，但渲染仍保持旧透明度。设备测试显示，`style+76` 影响实际渲染，而 `style+80` 反映界面/选择属性。v1.0.0 会同时写入两个字段。
 
-## 7. Highlighter width calibration
+## 7. 荧光笔宽度标定
 
-On a controlled page, Jnotes highlighter `d=6` visually matched Huawei highlighter width 32. The retained v1.0.0 rule is:
+在受控页面上，Jnotes 荧光笔 `d=6` 的视觉效果与华为荧光笔宽度 32 相符。v1.0.0 保留以下规则：
 
 ```text
-Huawei width = Jnotes d × 16/3
+华为宽度 = Jnotes d × 16/3
 ```
 
-## 8. Geometry
+## 8. 几何图形
 
-Controlled Jnotes samples separated:
+受控 Jnotes 样本区分了：
 
-- type 6: handwriting that was recognized/regularized after drawing;
-- type 7: explicit geometry-tool shapes.
+- type 6：绘制后被识别/规则化的手写内容；
+- type 7：显式几何工具图形。
 
-A Huawei native-shape export showed that geometry is also PENCILENGINE data, generally using ballpoint rendering and compact canonical point sets. Native circle/line experiments remained selectable after conversion.
+华为原生图形导出表明，几何图形同样属于 PENCILENGINE 数据，通常使用圆珠笔渲染和紧凑的规范点集。原生圆/直线实验在转换后仍可选择。
 
-An A/B test that removed the extra shape UUID index from half the circles showed no user-visible behavior difference; geometry in Huawei also becomes fixed after creation and does not expose editable construction handles again.
+一次 A/B 测试从一半圆形中移除了额外的图形 UUID 索引，结果没有发现用户可见的行为差异；华为中的几何图形创建后也会固定，不再显示可编辑的构造手柄。
 
-## 9. Paper templates
+## 9. 纸张模板
 
-A controlled Huawei note established the `base1`–`base6` background IDs. A controlled Jnotes notebook established how paper template families and size parameters are stored, enabling direct native background mapping instead of raster fallback for the standard templates used by the validated notebook.
+受控华为笔记确认了 `base1`–`base6` 背景 ID。受控 Jnotes 笔记确认了纸张模板族和尺寸参数的存储方式，因此对于经过验证的笔记使用的标准模板，可以直接映射到原生背景，而无需栅格化回退。

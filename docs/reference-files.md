@@ -1,70 +1,70 @@
-# Creating Huawei reference files
+# 创建华为参考文件
 
-Jnotes2Hinote v1.0.0 does not bundle Huawei binary templates. Create small reference notes in **your own Huawei Notes app** and export them as `.hinote`.
+Jnotes2Hinote v1.0.0 不会附带华为二进制模板。请在**自己的华为笔记应用**中创建小型参考笔记，并将其导出为 `.hinote`。
 
-The validated target version is **Huawei Notes 15.0.14.295**.
+经过验证的目标版本是 **华为笔记 15.0.14.295**。
 
-## 1. Normal pen reference
+## 1. 普通笔型参考
 
-Create one note and draw at least one stroke with each of these tools:
+创建一份笔记，使用以下每种工具至少绘制一条笔迹：
 
-1. Fountain/steel pen
-2. Ballpoint pen
-3. HB pencil
-4. Highlighter
+1. 钢笔
+2. 圆珠笔
+3. HB 铅笔
+4. 荧光笔
 
-More than one stroke per tool is useful because the converter chooses a template whose point count is close to the source stroke.
+每种工具绘制多条笔迹会更有帮助，因为转换器会选择点数接近源笔迹的模板。
 
-Export this note as, for example:
+例如，将这份笔记导出为：
 
 ```text
 reference.hinote
 ```
 
-The converter expects the exported PENCILENGINE data to contain Huawei pen types:
+转换器要求导出的 PENCILENGINE 数据包含以下华为笔型：
 
-| Huawei pen | `pen_type` |
+| 华为笔型 | `pen_type` |
 |---|---:|
-| Fountain/steel pen | 1 |
-| Ballpoint | 2 |
-| HB pencil | 3 |
-| Highlighter | 5 |
+| 钢笔 | 1 |
+| 圆珠笔 | 2 |
+| HB 铅笔 | 3 |
+| 荧光笔 | 5 |
 
-## 2. Shape reference
+## 2. 几何图形参考
 
-If a source Jnotes notebook contains supported type 6/type 7 geometry, create another Huawei note containing at least:
+如果源 Jnotes 笔记包含支持的 type 6/type 7 几何图形，请再创建一份华为笔记，至少包含：
 
-- a straight line;
-- a curve;
-- a rectangle;
-- a circle or ellipse.
+- 直线；
+- 曲线；
+- 矩形；
+- 圆或椭圆。
 
-Export it as:
+将其导出为：
 
 ```text
 shape-reference.hinote
 ```
 
-The v1.0.0 converter uses the following Huawei shape codes:
+v1.0.0 转换器使用以下华为图形代码：
 
-| Geometry | Huawei shape code |
+| 几何图形 | 华为图形代码 |
 |---|---:|
-| Straight line | 0 |
-| Rectangle | 7 |
-| Circle / ellipse | 10 |
-| Curve | 16 |
+| 直线 | 0 |
+| 矩形 | 7 |
+| 圆/椭圆 | 10 |
+| 曲线 | 16 |
 
-## Inspecting a reference
+## 检查参考文件
 
-Use:
+使用：
 
 ```bash
 python scripts/inspect_hinote.py reference.hinote
 python scripts/inspect_hinote.py shape-reference.hinote
 ```
 
-The script reports observed pen types, shape codes and point counts.
+脚本会报告观察到的笔型、图形代码和点数。
 
-## Privacy
+## 隐私
 
-Use a synthetic note with no personal content. Reference files are ignored by the repository `.gitignore` and should not be committed.
+请使用不含个人内容的合成笔记。参考文件已被仓库的 `.gitignore` 忽略，不应提交到仓库。

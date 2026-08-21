@@ -1,37 +1,37 @@
-# Limitations
+# 限制
 
-## Paper tape
+## 纸胶带
 
-Jnotes paper tape is structurally distinct from normal handwriting and supports visual styles such as solid/grid/hearts/dots and opaque/outline-like modes. No Huawei native equivalent has been identified.
+Jnotes 纸胶带在结构上不同于普通手写，并支持实心/网格/爱心/点阵等视觉样式以及不透明/轮廓模式。尚未找到华为原生等价物。
 
-The frozen v1.0.0 core **skips paper tape** and records the count in the JSON report. A future release may offer an explicit rasterization fallback.
+冻结的 v1.0.0 核心会**跳过纸胶带**，并在 JSON 报告中记录数量。未来版本可能提供明确的栅格化回退选项。
 
-## Audio
+## 音频
 
-Jnotes `AUDIO_EX` and Huawei generic attachment storage were investigated, but audio conversion is intentionally disabled in v1.0.0 because it has not completed the same end-to-end device-validation bar as handwriting.
+已经研究 Jnotes `AUDIO_EX` 和华为通用附件存储，但由于音频转换尚未达到与手写转换相同的端到端设备验证标准，v1.0.0 会有意禁用它。
 
-## Text fidelity
+## 文本保真度
 
-Text is migrated as editable text, but these can differ:
+文本会作为可编辑文本迁移，但以下内容可能不同：
 
-- font family availability;
-- line spacing;
-- wrapping;
-- exact box height;
-- baseline metrics.
+- 字体可用性；
+- 行距；
+- 换行；
+- 文本框的精确高度；
+- 基线度量。
 
-## Ordinary pen-width fidelity
+## 普通笔宽保真度
 
-The highlighter has a device-calibrated mapping. Ordinary pen-family visual widths were not exhaustively calibrated across the full UI range. v1.0.0 preserves the current tested internal-width behavior rather than claiming perfect cross-engine visual equivalence.
+荧光笔使用了经过设备标定的映射。普通笔类的视觉宽度尚未在完整界面范围内穷举标定。v1.0.0 保留当前测试得到的内部宽度行为，不宣称跨引擎视觉效果完全一致。
 
-## Geometry coverage
+## 几何图形覆盖范围
 
-Native geometry mappings are implemented for the subtypes present in the validated large notebook. Other Jnotes type 6/type 7 subtypes use editable ink-path fallback.
+已为经过验证的大型笔记中出现的子类型实现原生几何映射。其他 Jnotes type 6/type 7 子类型会使用可编辑的笔迹路径回退。
 
-## Version dependence
+## 版本依赖
 
-All byte offsets and behavior are based on Jnotes 3.2.3.2 and Huawei Notes 15.0.14.295. A different app release may change the format.
+所有字节偏移和行为都基于云记 3.2.3.2 与华为笔记 15.0.14.295。不同应用版本可能改变格式。
 
-## No official support
+## 无官方支持
 
-This is an unofficial reverse-engineered interoperability tool. Keep backups and test a few pages before importing an important full notebook.
+这是一个非官方的逆向工程互操作工具。请保留备份，并在导入重要的完整笔记前先测试几页。

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "jnotes2hinote"
 version = "1.0.0"
-description = "Device-tested Jideos Jnotes (.Jnotes) to Huawei Notes (.hinote) converter"
+description = "将经过设备验证的 Jideos 云记（.Jnotes）转换为华为笔记（.hinote），并保留原生可编辑笔迹"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

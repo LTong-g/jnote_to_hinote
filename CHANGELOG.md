@@ -1,35 +1,35 @@
-# Changelog
+# 更新日志
 
-All notable changes to this project are documented here.
+本文件记录本项目的所有重要变更。
 
 ## [1.0.0] - 2026-08-21
 
-First device-tested public release.
+首个经过设备验证的公开版本。
 
-### Validation environment
+### 验证环境
 
-- Source app: **Jideos Jnotes / 云记 3.2.3.2**
-- Target app: **Huawei Notes / 华为笔记 15.0.14.295**
-- Validation method: generated `.hinote` files were imported and checked on a Huawei device.
+- 源应用：**Jideos 云记 3.2.3.2**
+- 目标应用：**华为笔记 15.0.14.295**
+- 验证方式：将生成的 `.hinote` 文件导入华为设备并检查。
 
-### Supported in v1.0.0
+### v1.0.0 已支持
 
-- Multi-page `.Jnotes` → `.hinote`
-- Native editable PENCILENGINE handwriting
-- Ballpoint pen, fountain/steel pen, HB pencil and highlighter mappings
-- BGR color conversion used by Huawei Notes 15.0.14.295
-- Device-calibrated highlighter width and render/UI opacity
-- Jnotes type 6 / type 7 geometry for the subtypes exercised by the test notebook
-- Images and image-based stickers
-- Basic editable text boxes
-- Cover image migration
-- Native Huawei blank / horizontal / dotted / grid paper templates
-- SHA-256 metadata rebuilding (`fileMdStr`, `fileNameMdStr`, `detailFileMap`)
+- 多页 `.Jnotes` → `.hinote`
+- 原生可编辑的 PENCILENGINE 手写笔迹
+- 圆珠笔、钢笔、HB 铅笔和荧光笔映射
+- 华为笔记 15.0.14.295 使用的 BGR 颜色转换
+- 经过设备标定的荧光笔宽度以及渲染/界面透明度
+- 测试笔记中涉及的 Jnotes type 6 / type 7 几何图形
+- 图片和图片型贴纸
+- 基本的可编辑文本框
+- 封面图片迁移
+- 华为原生空白/横线/点阵/方格纸张模板
+- SHA-256 元数据重建（`fileMdStr`、`fileNameMdStr`、`detailFileMap`）
 
-### Known limitations
+### 已知限制
 
-- Paper tape has no confirmed Huawei native equivalent and is skipped by the frozen v1.0.0 core.
-- Audio format was reverse-engineered, but audio conversion is not enabled in v1.0.0.
-- Text layout can differ in font metrics, line spacing and wrapping.
-- Ordinary pen-width visual equivalence is not fully calibrated across all pen families.
-- Compatibility with app versions other than the validated pair is unverified.
+- 尚未确认纸胶带的华为原生等价物，冻结的 v1.0.0 核心会跳过它。
+- 音频格式已经逆向确认，但 v1.0.0 尚未启用音频转换。
+- 文本的字体度量、行距和换行可能不同。
+- 普通笔类的视觉笔宽尚未在所有笔型上完成完整标定。
+- 除已验证的版本组合外，其他应用版本的兼容性尚未验证。

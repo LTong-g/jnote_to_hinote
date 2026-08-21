@@ -10,24 +10,24 @@ from .converter_v1_0_0 import convert
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="jnotes2hinote",
-        description="Convert Jideos Jnotes .Jnotes notebooks to Huawei Notes .hinote.",
+        description="将 Jideos 云记 .Jnotes 笔记转换为华为笔记 .hinote。",
     )
-    p.add_argument("input", type=Path, help="Input .Jnotes file")
-    p.add_argument("output", type=Path, help="Output .hinote file")
+    p.add_argument("input", type=Path, help="输入的 .Jnotes 文件")
+    p.add_argument("output", type=Path, help="输出的 .hinote 文件")
     p.add_argument(
         "--reference-hinote",
         type=Path,
         required=True,
-        help="User-owned Huawei .hinote containing pen_type 1/2/3/5 examples",
+        help="用户自己的华为 .hinote 文件，包含 pen_type 1/2/3/5 示例",
     )
     p.add_argument(
         "--shape-reference-hinote",
         type=Path,
         default=None,
-        help="User-owned Huawei .hinote containing native line/curve/rectangle/circle shapes; required when the source contains supported type 6/7 geometry",
+        help="用户自己的华为 .hinote 文件，包含原生直线/曲线/矩形/圆图形；源文件包含支持的 type 6/7 几何图形时必需",
     )
-    p.add_argument("--pages", type=int, default=0, help="Convert only the first N pages; 0 = all")
-    p.add_argument("--report", type=Path, default=None, help="Write a JSON conversion report")
+    p.add_argument("--pages", type=int, default=0, help="只转换前 N 页；0 = 全部")
+    p.add_argument("--report", type=Path, default=None, help="写入 JSON 转换报告")
     return p
 
 

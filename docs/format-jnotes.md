@@ -1,24 +1,24 @@
-# Jnotes `.Jnotes` format notes
+# Jnotes `.Jnotes` 格式记录
 
-These notes describe the structures observed in **Jideos Jnotes / 云记 3.2.3.2**.
+以下记录描述了在 **Jideos 云记 3.2.3.2** 中观察到的结构。
 
-## Outer container
+## 外层容器
 
-A `.Jnotes` file is a ZIP archive containing:
+一个 `.Jnotes` 文件是包含以下内容的 ZIP 压缩包：
 
 ```text
 zip.Jzip
 ```
 
-`zip.Jzip` is a custom sequential container. Observed files begin with a Java-style UTF string:
+`zip.Jzip` 是一种自定义顺序容器。观察到的文件以 Java 风格的 UTF 字符串开始：
 
 ```text
 TRY
 ```
 
-followed by a version integer and note UUID.
+后面跟着版本整数和笔记 UUID。
 
-Records are then stored sequentially. The tested notebook contained record families including:
+随后按顺序存储记录。测试笔记包含的记录族包括：
 
 - `NOTE`
 - `PAGE`
@@ -28,83 +28,83 @@ Records are then stored sequentially. The tested notebook contained record famil
 - `COVER`
 - `AUDIO_EX`
 
-The end of the container includes a short footer containing `Lucky` in observed samples.
+容器末尾包含一个短尾部；在观察到的样本中，其中含有 `Lucky`。
 
-## Handwriting
+## 手写内容
 
-Stroke payloads are plaintext JSON. Important observed fields inside the nested `c` object include:
+笔迹负载是明文 JSON。嵌套 `c` 对象中的重要字段包括：
 
-| Field | Meaning |
+| 字段 | 含义 |
 |---|---|
-| `a` | tool/object type |
-| `c` | signed ARGB color integer |
-| `d` | width-like internal value |
-| `k[]` | sampled final path |
+| `a` | 工具/对象类型 |
+| `c` | 有符号 ARGB 颜色整数 |
+| `d` | 类似宽度的内部值 |
+| `k[]` | 采样后的最终路径 |
 
-Each point in `k[]` contains at least x/y and pressure-like data in the tested format.
+测试格式中的 `k[]` 每个点至少包含 x/y 和类似压力的数据。
 
-### Confirmed type mapping in controlled samples
+### 受控样本中确认的类型映射
 
-| Jnotes `a` | Meaning |
+| Jnotes `a` | 含义 |
 |---:|---|
-| 1 | Ballpoint pen |
-| 2 | Fountain/steel pen |
-| 3 | Highlighter |
-| 5 | Pencil |
-| 6 | Handwriting-recognized / regularized geometry |
-| 7 | Explicit geometry-tool object |
-| 10 | Paper tape |
+| 1 | 圆珠笔 |
+| 2 | 钢笔 |
+| 3 | 荧光笔 |
+| 5 | 铅笔 |
+| 6 | 手写识别/规则化后的几何图形 |
+| 7 | 显式几何工具对象 |
+| 10 | 纸胶带 |
 
-## Type 6 geometry
+## type 6 几何图形
 
-Controlled samples confirmed:
+受控样本确认：
 
-- `a=6, b=0`: handwriting regularized into a straight line;
-- `a=6, b=12`: handwriting regularized into a curve.
+- `a=6, b=0`：手写内容被规则化为直线；
+- `a=6, b=12`：手写内容被规则化为曲线。
 
-The large validated notebook also contained `a=6, b=4`, treated as an ellipse/circle-like recognized shape by v1.0.0.
+经过完整验证的大型笔记还包含 `a=6, b=4`，v1.0.0 将其视为类似椭圆/圆的识别图形。
 
-`l[]` can store a small set of defining/control points while `k[]` stores the final regularized display path.
+`l[]` 可以保存少量定义点/控制点，而 `k[]` 保存最终规则化后的显示路径。
 
-## Type 7 geometry
+## type 7 几何图形
 
-A controlled geometry-tool page confirmed that `a=7` means an explicit geometry-tool object, with `b` selecting a subtype. Observed Jnotes subtype values included:
+一个受控的几何工具页面确认，`a=7` 表示显式几何工具对象，`b` 用于选择子类型。观察到的 Jnotes 子类型包括：
 
-| `b` | Observed shape |
+| `b` | 观察到的图形 |
 |---:|---|
-| 0 | Solid line |
-| 1 | Dashed line |
-| 3 | Rectangle |
-| 4 | Circle / ellipse |
-| 5 | Triangle |
-| 6 | Right triangle |
-| 11 | Wavy line |
-| 13 | One-way arrow |
-| 14 | Two-way arrow |
-| 15 | Hexagon |
-| 16 | Five-point star |
-| 17 | Cylinder |
-| 18 | Triangular prism |
-| 19 | Cube |
+| 0 | 实线 |
+| 1 | 虚线 |
+| 3 | 矩形 |
+| 4 | 圆/椭圆 |
+| 5 | 三角形 |
+| 6 | 直角三角形 |
+| 11 | 波浪线 |
+| 13 | 单向箭头 |
+| 14 | 双向箭头 |
+| 15 | 六边形 |
+| 16 | 五角星 |
+| 17 | 圆柱体 |
+| 18 | 三棱柱 |
+| 19 | 立方体 |
 
-v1.0.0 has native Huawei mappings only for the subtypes exercised by the device-tested notebook. Other subtypes fall back to editable ink-path preservation.
+v1.0.0 只为经过设备验证的笔记中实际出现的子类型提供华为原生映射。其他子类型会回退为可编辑的笔迹路径。
 
-## Paper tape
+## 纸胶带
 
-Observed `a=10` objects have their own path and style fields. Important observations:
+观察到的 `a=10` 对象具有独立的路径和样式字段。重要观察包括：
 
-- width-like field `d`;
-- color field `c`;
-- style selector `y`;
-- opaque/outline-like behavior selector `z`;
-- path in `k[]`.
+- 类似宽度的字段 `d`；
+- 颜色字段 `c`；
+- 样式选择器 `y`；
+- 不透明/轮廓模式选择器 `z`；
+- 位于 `k[]` 中的路径。
 
-No Huawei native equivalent has been confirmed. v1.0.0 skips paper tape rather than pretending it is a normal pen stroke.
+尚未确认华为原生等价物。v1.0.0 会跳过纸胶带，而不会假装把它当作普通笔迹。
 
-## Images and stickers
+## 图片和贴纸
 
-Jnotes image records can carry raw PNG/JPEG bytes. Controlled sticker samples were ordinary RGBA PNG images, which maps naturally to Huawei image elements.
+Jnotes 图片记录可以携带原始 PNG/JPEG 字节。受控贴纸样本是普通的 RGBA PNG 图片，可以自然映射到华为图片元素。
 
-## Audio
+## 音频
 
-`AUDIO_EX` records were observed to contain raw MP3 data with metadata such as filename, duration and page geometry. The format is documented for future work, but v1.0.0 does not enable audio conversion.
+观察到 `AUDIO_EX` 记录包含原始 MP3 数据，以及文件名、时长和页面几何信息等元数据。该格式已为未来工作记录，但 v1.0.0 不会启用音频转换。

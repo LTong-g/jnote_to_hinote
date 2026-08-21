@@ -1,10 +1,10 @@
-# Huawei `.hinote` / PENCILENGINE format notes
+# 华为 `.hinote` / PENCILENGINE 格式记录
 
-These notes describe structures device-tested with **Huawei Notes 15.0.14.295**.
+以下记录描述了在 **华为笔记 15.0.14.295** 上经过设备验证的结构。
 
-## `.hinote` archive
+## `.hinote` 压缩包
 
-A `.hinote` export is a ZIP archive containing:
+一个 `.hinote` 导出文件是包含以下内容的 ZIP 压缩包：
 
 ```text
 <note-id>.jhinote
@@ -13,56 +13,56 @@ files/*
 custom_md.jhinote
 ```
 
-`.jhinote` payloads are GZIP-compressed JSON.
+`.jhinote` 负载是经过 GZIP 压缩的 JSON。
 
-Handwriting lives in `files/*.bin` PENCILENGINE files.
+手写内容位于 `files/*.bin` PENCILENGINE 文件中。
 
-## PENCILENGINE layout used by v15.0.14.295
+## v15.0.14.295 使用的 PENCILENGINE 布局
 
-The tested normal handwriting files use:
+经过测试的普通手写文件使用：
 
 ```text
-196-byte file header
+196 字节文件头
 
-repeat for each stroke:
-    108-byte Style Record
-    16-byte Point Table Header
-    N × 36-byte Point Data
-    64-byte link/tail
+每条笔迹重复：
+    108 字节样式记录
+    16 字节点表头
+    N × 36 字节点数据
+    64 字节链接/尾部
 
-12-byte trailer
+12 字节尾标记
 ```
 
-This is newer/different from older public parsers that assume a shorter style record.
+这与一些假定样式记录更短的旧版公开解析器不同。
 
-## Point data
+## 点数据
 
-For the tested 36-byte point stride:
+对于经过测试的 36 字节点步长：
 
-| Offset from point | Type | Meaning |
+| 点内偏移 | 类型 | 含义 |
 |---:|---|---|
-| +4 | big-endian float | x |
-| +8 | big-endian float | y |
-| +16 | big-endian float | pressure |
+| +4 | 大端浮点数 | x |
+| +8 | 大端浮点数 | y |
+| +16 | 大端浮点数 | 压力 |
 
-## Style record fields used by v1.0.0
+## v1.0.0 使用的样式记录字段
 
-| Offset | Meaning in tested files |
+| 偏移 | 在测试文件中的含义 |
 |---:|---|
-| +8 | sentinel for ordinary ink; also shape code in native geometry records |
+| +8 | 普通笔迹的哨兵值；在原生几何记录中也表示图形代码 |
 | +56 | `pen_type` |
-| +64 | B color float |
-| +68 | G color float |
-| +72 | R color float |
-| +76 | effective/render opacity for tested highlighter |
-| +80 | selection/UI opacity for tested highlighter |
-| +84 | width/base-width field |
+| +64 | B 颜色浮点数 |
+| +68 | G 颜色浮点数 |
+| +72 | R 颜色浮点数 |
+| +76 | 测试荧光笔的有效/渲染透明度 |
+| +80 | 测试荧光笔的选择/界面透明度 |
+| +84 | 宽度/基础宽度字段 |
 
-### Color order
+### 颜色顺序
 
-Huawei Notes 15.0.14.295 stores the tested stroke RGB channels as **B, G, R**, not R, G, B.
+华为笔记 15.0.14.295 将测试笔迹的 RGB 通道存储为 **B、G、R**，而不是 R、G、B。
 
-For source color `#364C7E`, v1.0.0 writes approximately:
+对于源颜色 `#364C7E`，v1.0.0 大致写入：
 
 ```text
 +64 = 0x7E / 255
@@ -70,37 +70,37 @@ For source color `#364C7E`, v1.0.0 writes approximately:
 +72 = 0x36 / 255
 ```
 
-## Pen types observed
+## 观察到的笔型
 
-| Huawei `pen_type` | Tool |
+| 华为 `pen_type` | 工具 |
 |---:|---|
-| 1 | Fountain/steel pen |
-| 2 | Ballpoint |
-| 3 | HB pencil |
-| 4 | Marker |
-| 5 | Highlighter |
-| 11 | 2B pencil |
-| 12 | Xiuli / calligraphy pen |
-| 13 | Brush |
+| 1 | 钢笔 |
+| 2 | 圆珠笔 |
+| 3 | HB 铅笔 |
+| 4 | 马克笔 |
+| 5 | 荧光笔 |
+| 11 | 2B 铅笔 |
+| 12 | 秀丽/书法笔 |
+| 13 | 毛笔 |
 
-v1.0.0 only needs 1/2/3/5 for the tested source notebook, plus ballpoint-rendered native geometry.
+对于测试源笔记，v1.0.0 只需要 1/2/3/5，另加使用圆珠笔渲染的原生几何图形。
 
-## Linked-list structure
+## 链表结构
 
-A key reverse-engineering result is that the 196-byte header acts like a root link into stroke 1, and each 64-byte stroke tail links to the next stroke.
+逆向工程的一项关键结果是：196 字节文件头像根链接一样指向第 1 条笔迹，每个 64 字节的笔迹尾部都链接到下一条笔迹。
 
-For a normal continuation tail:
+对于普通的后续链接尾部：
 
 ```text
 tail + 16 = next_point_count × 36 + 140
 tail + 48 = next_point_count × 36 + 20
 ```
 
-The converter rebuilds these values for every generated stroke.
+转换器会为每条生成的笔迹重建这些值。
 
-### Header → first stroke
+### 文件头 → 第一条笔迹
 
-Equivalent root fields include:
+等价的根字段包括：
 
 ```text
 header + 136 = 48
@@ -112,32 +112,32 @@ header + 176 = 120
 header + 180 = first_point_count × 36 + 20
 ```
 
-A UUID-like 16-byte field is stored at `header+152..167`, and a sequence-like value is stored at `header+188` in the tested layout.
+测试布局在 `header+152..167` 存储一个类似 UUID 的 16 字节字段，并在 `header+188` 存储一个类似序列号的值。
 
-Failure to rebuild the header root pointer produced files where each page displayed only its first stroke during experimentation.
+实验期间，如果不重建文件头根指针，每个页面只显示第一条笔迹。
 
-## END tail
+## END 尾部
 
-The last stroke uses a distinct END layout rather than a normal continuation tail. v1.0.0 writes one END record per PENCILENGINE page.
+最后一条笔迹使用区别于普通后续链接尾部的 END 布局。v1.0.0 会为每个 PENCILENGINE 页面写入一条 END 记录。
 
-## Native geometry
+## 原生几何图形
 
-Huawei geometry-tool output is also stored inside PENCILENGINE. Controlled samples showed geometry records using ballpoint rendering (`pen_type=2`) with compact canonical point sets, for example:
+华为几何工具的输出也存储在 PENCILENGINE 内。受控样本显示，几何记录使用圆珠笔渲染（`pen_type=2`）和紧凑的规范点集，例如：
 
-| Huawei shape code | Tested geometry | Typical count in reference |
+| 华为图形代码 | 测试图形 | 参考样本中的典型点数 |
 |---:|---|---:|
-| 0 | Straight line | 2 |
-| 7 | Rectangle | 5 |
-| 10 | Circle / ellipse | 361 |
-| 16 | Curve | 101 |
+| 0 | 直线 | 2 |
+| 7 | 矩形 | 5 |
+| 10 | 圆/椭圆 | 361 |
+| 16 | 曲线 | 101 |
 
-Some native-shape pages also include an extended UUID index after the final stroke. A/B device testing found no user-visible selection/transform behavior difference when that index was omitted, so v1.0.0 does not require it.
+一些原生图形页面在最后一条笔迹之后还包含扩展 UUID 索引。设备 A/B 测试发现省略该索引不会造成用户可见的选择/变换差异，因此 v1.0.0 不要求它。
 
-## SHA-256 metadata
+## SHA-256 元数据
 
-Observed checksum behavior uses ordinary SHA-256:
+观察到的校验和行为使用普通 SHA-256：
 
-- `fileMdStr`: uppercase SHA-256 of file content;
-- `fileNameMdStr`: lowercase SHA-256 of the basename string.
+- `fileMdStr`：文件内容的大写 SHA-256；
+- `fileNameMdStr`：文件名字符串的小写 SHA-256。
 
-Page metadata also carries a `detailFileMap` containing file hashes.
+页面元数据还包含一个记录文件哈希的 `detailFileMap`。

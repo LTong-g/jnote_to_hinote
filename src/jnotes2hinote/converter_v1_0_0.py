@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Jnotes2Hinote converter core v1.0.0.
+"""Jnotes2Hinote v1.0.0 转换核心。
 
-Reverse-engineered converter for:
-- Jideos Jnotes / 云记 3.2.3.2
-- Huawei Notes / 华为笔记 15.0.14.295
+适用的逆向工程格式：
+- Jideos 云记 3.2.3.2
+- 华为笔记 15.0.14.295
 
-This file is the frozen v1.0.0 conversion core. Future refactors should be
-implemented in a new versioned module instead of silently changing this file.
+本文件是冻结的 v1.0.0 转换核心。未来重构应放入新的版本化模块，
+不要静默修改本文件。
 
-The converter intentionally requires user-provided Huawei reference .hinote
-files. No Huawei application assets or private note samples are bundled.
+转换器有意要求用户提供华为参考 `.hinote` 文件。本项目不附带华为应用
+资产或私人笔记样本。
 """
 from __future__ import annotations
 
@@ -102,16 +102,16 @@ class JNote:
 
 
 def parse_jnotes(path: Path) -> JNote:
-    """Parse the Jnotes 3.2.3.2 ZIP/Jzip container used by v1.0.0."""
+    """解析 v1.0.0 使用的 Jnotes 3.2.3.2 ZIP/Jzip 容器。"""
     with zipfile.ZipFile(path) as z:
         if "zip.Jzip" not in z.namelist():
-            raise ValueError("Not a supported .Jnotes archive: zip.Jzip is missing")
+            raise ValueError("不是受支持的 .Jnotes 压缩包：缺少 zip.Jzip")
         data = z.read("zip.Jzip")
 
     pos = 0
     magic, pos = java_utf_read(data, pos)
     if magic != "TRY":
-        raise ValueError(f"Unexpected Jzip magic: {magic!r}")
+        raise ValueError(f"Jzip 魔数异常：{magic!r}")
     if pos + 4 > len(data):
         raise EOFError
     _version = struct.unpack_from(">i", data, pos)[0]
@@ -138,14 +138,14 @@ def parse_jnotes(path: Path) -> JNote:
             aux_path, pos = java_utf_read(data, pos)
             aux_size, pos = java_utf_read(data, pos)
             if payload_len < 0 or pos + payload_len > len(data):
-                raise ValueError("Invalid Jnotes payload length")
+                raise ValueError("Jnotes 负载长度无效")
             payload = data[pos : pos + payload_len]
             pos += payload_len
             binary = b""
             if aux_size.isdigit():
                 blen = int(aux_size)
                 if pos + blen > len(data):
-                    raise ValueError("Invalid Jnotes embedded binary length")
+                    raise ValueError("Jnotes 嵌入二进制长度无效")
                 binary = data[pos : pos + blen]
                 pos += blen
             records.append(JRecord(typ, src, oid, parent, aux_path, aux_size, payload, binary))
@@ -178,7 +178,7 @@ def parse_jnotes(path: Path) -> JNote:
             audio_records.append(r)
 
     if not note_meta:
-        raise ValueError("Jnotes NOTE record is missing")
+        raise ValueError("缺少 Jnotes NOTE 记录")
 
     title = str(note_meta.get("b") or path.stem)
     width = float(note_meta.get("j", 1240.0))
@@ -216,39 +216,38 @@ class ShapeTemplate:
 
 
 def _parse_normal_pencilengine(data: bytes) -> list[tuple[int, int, int, int, int, int]]:
-    """Parse a standard v15 PENCILENGINE chain with 64-byte tails + 12-byte trailer."""
+    """解析带 64 字节尾部和 12 字节尾标记的标准 v15 PENCILENGINE 链。"""
     if not data.startswith(b"PENCILENGINE"):
-        raise ValueError("Not a PENCILENGINE binary")
+        raise ValueError("不是 PENCILENGINE 二进制文件")
     blocks: list[tuple[int, int, int, int, int, int]] = []
     pos = 196
     while pos < len(data) - 12:
         ph = pos + 108
         if ph + 16 > len(data) - 12:
-            raise ValueError("Truncated PENCILENGINE style/header")
+            raise ValueError("PENCILENGINE 样式/文件头被截断")
         prefix, count, stride, reserved = struct.unpack_from(">IIII", data, ph)
         if prefix not in (0, 2) or not (2 <= count <= 20000) or stride != 36 or reserved != 0:
-            raise ValueError(f"Unexpected PENCILENGINE block at {pos}")
+            raise ValueError(f"PENCILENGINE 在 {pos} 处出现异常数据块")
         ps = ph + 16
         pe = ps + count * 36
         end = pe + 64
         if end > len(data) - 12:
-            raise ValueError("Truncated PENCILENGINE block")
+            raise ValueError("PENCILENGINE 数据块被截断")
         blocks.append((pos, ph, count, ps, pe, end))
         pos = end
     if pos != len(data) - 12:
-        raise ValueError("Unexpected PENCILENGINE trailer position")
+        raise ValueError("PENCILENGINE 尾标记位置异常")
     return blocks
 
 
 def _parse_shape_reference(data: bytes) -> list[tuple[int, int, int, int, int, int]]:
-    """Parse stroke bodies from a Huawei native-shape page.
+    """解析华为原生图形页面中的笔迹主体。
 
-    Native shape pages may carry an extended UUID index after the last stroke;
-    therefore the number of strokes is taken from header+112 instead of scanning
-    until the standard 12-byte trailer.
+    原生图形页面可能在最后一条笔迹之后带有扩展 UUID 索引，因此笔迹数量
+    取自 header+112，而不是扫描到标准的 12 字节尾标记。
     """
     if not data.startswith(b"PENCILENGINE"):
-        raise ValueError("Not a PENCILENGINE binary")
+        raise ValueError("不是 PENCILENGINE 二进制文件")
     n = struct.unpack_from(">I", data, 112)[0]
     blocks: list[tuple[int, int, int, int, int, int]] = []
     pos = 196
@@ -256,7 +255,7 @@ def _parse_shape_reference(data: bytes) -> list[tuple[int, int, int, int, int, i
         ph = pos + 108
         prefix, count, stride, reserved = struct.unpack_from(">IIII", data, ph)
         if prefix not in (0, 2) or not (2 <= count <= 20000) or stride != 36 or reserved != 0:
-            raise ValueError(f"Unexpected shape-reference block at {pos}")
+            raise ValueError(f"图形参考数据在 {pos} 处出现异常数据块")
         ps = ph + 16
         pe = ps + count * 36
         end = pe + 64
@@ -266,11 +265,10 @@ def _parse_shape_reference(data: bytes) -> list[tuple[int, int, int, int, int, i
 
 
 class HuaweiReferenceTemplates:
-    """Extract user-owned Huawei binary templates.
+    """提取用户自己的华为二进制模板。
 
-    The normal reference should contain examples of pen_type 1/2/3/5.
-    The shape reference should contain native shape codes 0/7/10/16 when the
-    source notebook contains Jnotes type 6/7 geometry.
+    普通参考文件应包含 pen_type 1/2/3/5 的示例。当源笔记包含 Jnotes
+    type 6/7 几何图形时，图形参考文件应包含原生图形代码 0/7/10/16。
     """
 
     def __init__(self, normal_reference: Path, shape_reference: Path | None = None):
@@ -292,7 +290,7 @@ class HuaweiReferenceTemplates:
     def _load_normal(self, path: Path) -> None:
         bins = self._all_bins(path)
         if not bins:
-            raise ValueError("Normal reference .hinote contains no PENCILENGINE .bin")
+            raise ValueError("普通参考 .hinote 不包含 PENCILENGINE .bin 文件")
 
         first_good: bytes | None = None
         for data in bins:
@@ -312,7 +310,7 @@ class HuaweiReferenceTemplates:
                 self.pen_templates[pen_type].append(StrokeTemplate(style, data[ph:ps], pts))
 
         if first_good is None:
-            raise ValueError("Could not parse a standard PENCILENGINE chain from normal reference")
+            raise ValueError("无法从普通参考文件解析标准 PENCILENGINE 链")
         self.header = first_good[:196]
         self.trailer = first_good[-12:]
 
@@ -320,7 +318,7 @@ class HuaweiReferenceTemplates:
         missing = sorted(required.difference(self.pen_templates))
         if missing:
             raise ValueError(
-                "Normal reference is missing required Huawei pen types: "
+                "普通参考文件缺少必需的华为笔型："
                 + ", ".join(map(str, missing))
             )
 
@@ -347,34 +345,34 @@ class HuaweiReferenceTemplates:
         if not choices:
             choices = self.pen_templates.get(2)
         if not choices:
-            raise ValueError(f"No Huawei template available for pen_type={pen_type}")
+            raise ValueError(f"没有可用于 pen_type={pen_type} 的华为模板")
         return min(choices, key=lambda t: abs(t.count - desired_count))
 
     def require_shapes(self, codes: Iterable[int]) -> None:
         missing = sorted(set(codes).difference(self.shape_templates))
         if missing:
             raise ValueError(
-                "Shape reference is missing required native shape codes: "
+                "图形参考文件缺少必需的原生图形代码："
                 + ", ".join(map(str, missing))
-                + ". Create/export a Huawei note containing line, curve, rectangle and circle shapes, "
-                "then pass it with --shape-reference-hinote."
+                + "。请创建/导出一份包含直线、曲线、矩形和圆图形的华为笔记，"
+                "然后通过 --shape-reference-hinote 传入。"
             )
 
 
 J_TO_HW_PEN = {
-    1: 2,  # Jnotes ballpoint -> Huawei ballpoint
-    2: 1,  # Jnotes fountain/steel pen -> Huawei fountain pen
-    3: 5,  # Jnotes highlighter -> Huawei highlighter
-    5: 3,  # Jnotes pencil -> Huawei HB pencil
+    1: 2,  # Jnotes 圆珠笔 -> 华为圆珠笔
+    2: 1,  # Jnotes 钢笔 -> 华为钢笔
+    3: 5,  # Jnotes 荧光笔 -> 华为荧光笔
+    5: 3,  # Jnotes 铅笔 -> 华为 HB 铅笔
 }
 
-# Jnotes regularized/explicit geometry -> Huawei native geometry shape code.
+# Jnotes 规则化/显式几何图形 -> 华为原生几何图形代码。
 J_GEOMETRY_TO_HW_SHAPE = {
-    (6, 0): 0,   # handwriting regularized to straight line
-    (6, 12): 16, # handwriting regularized to curve
-    (6, 4): 10,  # recognized ellipse
-    (7, 3): 7,   # explicit rectangle tool
-    (7, 4): 10,  # explicit circle / ellipse tool
+    (6, 0): 0,   # 手写规则化为直线
+    (6, 12): 16, # 手写规则化为曲线
+    (6, 4): 10,  # 识别出的椭圆
+    (7, 3): 7,   # 显式矩形工具
+    (7, 4): 10,  # 显式圆/椭圆工具
 }
 
 
@@ -475,11 +473,11 @@ def _build_normal_body(
 
     width = float(c.get("d", 4.0))
     if jtype == 3:
-        # Device-calibrated on Huawei Notes 15.0.14.295.
+        # 已在华为笔记 15.0.14.295 上完成设备标定。
         width = width * 16.0 / 3.0
         opacity = min(80.0 / 255.0, _source_alpha(c) / 255.0)
-        style[76:80] = f32be(opacity)  # actual rendered opacity
-        style[80:84] = f32be(opacity)  # selection/UI opacity
+        style[76:80] = f32be(opacity)  # 实际渲染透明度
+        style[80:84] = f32be(opacity)  # 选择/界面透明度
     style[84:88] = f32be(width)
 
     ph = bytearray(tpl.point_header)
@@ -530,8 +528,8 @@ def _build_geometry_body(
     shape_code = J_GEOMETRY_TO_HW_SHAPE.get((jt, subtype))
 
     if shape_code is None:
-        # Unknown geometry subtype: preserve its visible k[] path as ballpoint ink.
-        # This remains editable but is not advertised as native geometry.
+        # 未知几何子类型：将可见的 k[] 路径保留为圆珠笔笔迹。
+        # 结果仍可编辑，但不宣称为原生几何图形。
         pseudo = {"c": dict(c)}
         pseudo["c"]["a"] = 1
         body, count = _build_normal_body(pseudo, refs, sx)
@@ -547,7 +545,7 @@ def _build_geometry_body(
     ph = bytearray(tpl.point_header)
 
     style[0:4] = f32be(float(count - 1))
-    style[56:60] = u32be(2)  # Huawei native shapes use ballpoint renderer
+    style[56:60] = u32be(2)  # 华为原生图形使用圆珠笔渲染器
     _write_huawei_bgr(style, c)
     style[76:80] = f32be(1.0)
     style[80:84] = f32be(1.0)
@@ -580,7 +578,7 @@ def _build_geometry_body(
         coords = [(x * sx, y * sx) for x, y in _resample_xy(k, count)]
 
     if len(coords) != count:
-        raise ValueError(f"Geometry point count mismatch for shape_code={shape_code}")
+        raise ValueError(f"图形点数与 shape_code={shape_code} 不匹配")
 
     body = bytearray(style)
     body.extend(ph)
@@ -598,10 +596,10 @@ def build_pencilengine(
     refs: HuaweiReferenceTemplates,
     sx: float,
 ) -> tuple[bytes, dict[str, int]]:
-    """Build a linked PENCILENGINE file from Jnotes stroke objects."""
+    """从 Jnotes 笔迹对象构建带链接的 PENCILENGINE 文件。"""
     convertible = [r for r in strokes if int(r.get("c", {}).get("a", -1)) != 10]
     if not convertible:
-        raise ValueError("No convertible ink strokes")
+        raise ValueError("没有可转换的手写笔迹")
 
     bodies: list[bytes] = []
     counts: list[int] = []
@@ -651,22 +649,21 @@ def build_pencilengine(
     header[116:120] = u32be(total_len - 196)
     result = bytes(header) + bytes(body) + refs.trailer
 
-    # Structural self-check. This catches the root/next-count bugs that caused
-    # early experimental files to show only the first stroke.
+    # 结构自检：捕获早期实验文件只显示第一条笔迹的根链接/后续计数错误。
     blocks = _parse_normal_pencilengine(result)
     if len(blocks) != len(bodies):
-        raise AssertionError("PENCILENGINE stroke count validation failed")
+        raise AssertionError("PENCILENGINE 笔迹数量验证失败")
     if struct.unpack_from(">I", result, 148)[0] != counts[0] * 36 + 140:
-        raise AssertionError("PENCILENGINE root pointer A validation failed")
+        raise AssertionError("PENCILENGINE 根指针 A 验证失败")
     if struct.unpack_from(">I", result, 180)[0] != counts[0] * 36 + 20:
-        raise AssertionError("PENCILENGINE root pointer B validation failed")
+        raise AssertionError("PENCILENGINE 根指针 B 验证失败")
     for i in range(len(blocks) - 1):
         pe = blocks[i][4]
         nc = blocks[i + 1][2]
         if struct.unpack_from(">I", result, pe + 16)[0] != nc * 36 + 140:
-            raise AssertionError("PENCILENGINE next pointer A validation failed")
+            raise AssertionError("PENCILENGINE 后续指针 A 验证失败")
         if struct.unpack_from(">I", result, pe + 48)[0] != nc * 36 + 20:
-            raise AssertionError("PENCILENGINE next pointer B validation failed")
+            raise AssertionError("PENCILENGINE 后续指针 B 验证失败")
     return result, stats
 
 
@@ -769,11 +766,11 @@ def _paper_params(page: dict[str, Any]) -> tuple[str, float | None]:
 
 
 def background_for_page(page: dict[str, Any]) -> str:
-    """Map Jnotes paper to Huawei native base templates.
+    """将 Jnotes 纸张映射为华为原生 base 模板。
 
-    Device-confirmed Huawei template IDs:
-      base1 blank, base4 wide horizontal, base5 narrow horizontal,
-      base6 dots, base3 small/narrow grid, base2 medium/wide grid.
+    已经设备确认的华为模板 ID：
+      base1 空白、base4 宽横线、base5 窄横线、
+      base6 点阵、base3 小/窄方格、base2 中/宽方格。
     """
     bg, ui_size = _paper_params(page)
     low = bg.lower()
@@ -890,14 +887,14 @@ def convert(
     shape_reference_hinote: Path | None = None,
     page_limit: int | None = None,
 ) -> dict[str, Any]:
-    """Convert a .Jnotes notebook into a Huawei .hinote archive."""
+    """将 `.Jnotes` 笔记转换为华为 `.hinote` 压缩包。"""
     jn = parse_jnotes(jnotes_path)
     refs = HuaweiReferenceTemplates(normal_reference_hinote, shape_reference_hinote)
     pages_src = jn.pages[:page_limit] if page_limit else jn.pages
     if not pages_src:
-        raise ValueError("Source notebook has no pages")
+        raise ValueError("源笔记没有页面")
 
-    # Fail early if supported geometry exists but the native shape reference is missing.
+    # 如果存在受支持的几何图形但缺少原生图形参考文件，则尽早失败。
     required_shapes: set[int] = set()
     for p in pages_src:
         pid = str(p.get("a"))

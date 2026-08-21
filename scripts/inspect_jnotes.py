@@ -10,7 +10,7 @@ from jnotes2hinote.converter_v1_0_0 import parse_jnotes
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Inspect a Jnotes archive without converting it")
+    ap = argparse.ArgumentParser(description="检查 Jnotes 压缩包，但不执行转换")
     ap.add_argument("input", type=Path)
     args = ap.parse_args()
 
@@ -33,16 +33,16 @@ def main() -> None:
                 paper_tape += 1
 
     print(json.dumps({
-        "title": jn.title,
-        "pages": len(jn.pages),
-        "records": len(jn.records),
-        "strokeObjects": total,
-        "strokeTypes": dict(sorted(pen_types.items())),
-        "geometrySubtypes": {f"{k[0]}:{k[1]}": v for k, v in sorted(geometry.items())},
-        "images": sum(len(v) for v in jn.images.values()),
-        "textBoxes": sum(len(v) for v in jn.texts.values()),
-        "audioRecords": len(jn.audio_records),
-        "paperTapeObjects": paper_tape,
+        "标题": jn.title,
+        "页数": len(jn.pages),
+        "记录数": len(jn.records),
+        "笔迹对象数": total,
+        "笔迹类型": dict(sorted(pen_types.items())),
+        "几何子类型": {f"{k[0]}:{k[1]}": v for k, v in sorted(geometry.items())},
+        "图片数": sum(len(v) for v in jn.images.values()),
+        "文本框数": sum(len(v) for v in jn.texts.values()),
+        "音频记录数": len(jn.audio_records),
+        "纸胶带对象数": paper_tape,
     }, ensure_ascii=False, indent=2))
 
 

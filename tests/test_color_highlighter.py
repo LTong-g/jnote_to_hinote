@@ -5,7 +5,7 @@ from jnotes2hinote.converter_v1_0_0 import _source_alpha, _write_huawei_bgr, f32
 
 def test_huawei_bgr_layout():
     style = bytearray(108)
-    # ARGB FF 36 4C 7E
+    # ARGB FF 36 4C 7E（十六进制）
     _write_huawei_bgr(style, {"c": 0xFF364C7E})
     b, g, r = struct.unpack_from(">fff", style, 64)
     assert abs(b - 0x7E / 255) < 1e-6

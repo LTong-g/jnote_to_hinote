@@ -1,11 +1,11 @@
-# Frozen v1.0.0 core
+# 冻结的 v1.0.0 核心
 
-The device-tested conversion core is:
+经过设备验证的转换核心是：
 
 `src/jnotes2hinote/converter_v1_0_0.py`
 
-SHA-256 at repository preparation time:
+仓库准备时的 SHA-256：
 
-`ee551f236053b141f4f6d66425367cdf268a87f6b777c885b2a1c6f2553d7287`
+`5e8422ac8f6c05d6ced734e9c6a50095ff56719cf32de3237b41e21d0d98aee6`
 
-The project policy is to leave this module unchanged after the v1.0.0 release. Behavioral fixes or refactors should be introduced in a new versioned core module and documented in the changelog.
+项目策略是在 v1.0.0 发布后保持该模块不变。行为修复或重构应引入新的版本化核心模块，并记录在更新日志中。

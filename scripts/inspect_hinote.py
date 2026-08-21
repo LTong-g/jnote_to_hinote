@@ -29,7 +29,7 @@ def inspect_bin(data: bytes):
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Inspect Huawei PENCILENGINE records in a .hinote")
+    ap = argparse.ArgumentParser(description="检查 .hinote 中的华为 PENCILENGINE 记录")
     ap.add_argument("input", type=Path)
     args = ap.parse_args()
 
@@ -45,18 +45,18 @@ def main() -> None:
             try:
                 rows = inspect_bin(data)
             except Exception as exc:
-                print(f"{name}: parse failed: {exc}")
+                print(f"{name}：解析失败：{exc}")
                 continue
-            print(f"{name}: {len(rows)} stroke bodies")
+            print(f"{name}：{len(rows)} 条笔迹主体")
             for _, pen, shape, count, width in rows:
                 pens[pen] += 1
                 if pen == 2 and shape != 0xFFFFFFFF:
                     shapes[shape] += 1
-            print("  sample:", rows[:12])
+            print("  示例：", rows[:12])
 
-    print("PENCILENGINE files:", bins)
-    print("pen_type counts:", dict(sorted(pens.items())))
-    print("shape-code counts:", dict(sorted(shapes.items())))
+    print("PENCILENGINE 文件数：", bins)
+    print("pen_type 数量：", dict(sorted(pens.items())))
+    print("图形代码数量：", dict(sorted(shapes.items())))
 
 
 if __name__ == "__main__":
