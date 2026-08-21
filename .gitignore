@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Personal note files / references
+*.Jnotes
+*.jnotes
+*.hinote
+references/
+data/
+output/
+reports/
+
+# Local test artifacts
+*.log
+*.tmp

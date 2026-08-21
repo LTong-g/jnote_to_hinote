@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: Jnotes2Hinote
+message: "If this reverse-engineering work is useful to your research or tooling, please cite the repository."
+type: software
+authors:
+  - family-names: Lyu
+    given-names: Jiongrui
+version: 1.0.0
+date-released: 2026-08-21
+license: MIT
