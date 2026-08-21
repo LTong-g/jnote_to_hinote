@@ -15,7 +15,7 @@
 - `src/jnotes2hinote/cli.py`
 - `pyproject.toml`
 - `README.md`
-- `README.zh-CN.md`
+- `README.en.md`
 - `CHANGELOG.md`
 - `docs/compatibility.md`
 - `docs/frozen-core.md`
