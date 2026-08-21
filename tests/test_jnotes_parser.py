@@ -3,7 +3,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-from jnotes2hinote.converter_v1_0_0 import parse_jnotes
+from jnotes2hinote.converter_v1_1_0 import parse_jnotes
 
 
 def java_utf(s: str) -> bytes:
