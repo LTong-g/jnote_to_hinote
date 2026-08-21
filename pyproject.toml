@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-  {name = "Lyu Jiongrui"}
+  {name = "Ray L"}
 ]
 keywords = ["jnotes", "huawei-notes", "hinote", "note-converter", "reverse-engineering"]
 classifiers = [
