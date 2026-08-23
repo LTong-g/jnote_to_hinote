@@ -2,9 +2,9 @@ f276c97e4d05f77db9b92a2b1681be80bdadd457e1d663ee94a257c38197170e  ./CHANGELOG.md
 4c29307a30a8f67cabb4dcbefb7c02be31805dd89b6dd2ec8b73d55306dd0d81  ./CITATION.cff
 ed13ecf9fd82b160f07e7f40623d1db5eec2a75ba60beac1100f4cc0b8d799c1  ./README.md
 9c5c271f612d444c9a103f60521e28f4dc46deccd91b08b021a92c81b8ce572a  ./README.en.md
-2abc6d6c6f5066dfbb859c0fa1e406de4acfeed65530ab662c8bb335e79eb268  ./UPDATE_MANIFEST.md
+498646591adea17534e2cb25ea7fc43b17192ea3c6dc14ab3c352e38f6ebe351  ./UPDATE_MANIFEST.md
 b286b4f27d9267ebd0888957f896e7181a29c512d77dafc894bb94056630aafc  ./docs/compatibility.md
-0bad572b8382a1e8fd1d668abde842e95a131d0aa6de802e6d3d58cd8b1f6909  ./docs/frozen-core.md
+a3b1b539056fe03c82c37e9bca80e6227251937164a0cd944c7f3033c573f13b  ./docs/frozen-core.md
 ac10a041f145e174a0c2f4d6236dccb4de3eefdf9b78edf5e4c204097a029ee4  ./docs/limitations.md
 9fc0bfcca531deb691f2dbc37aea50db4e7410ab0783195c38717634d83db6c9  ./docs/mapping.md
 a37eb1aa13dd5f3f6c027a5399107395bb1aa202b4e78177c300e884a5a3ba57  ./docs/validation-v1.1.0.md

@@ -33,13 +33,15 @@ v1.1.1 是一个修复版本：普通不透明 type 6/type 7 几何图形的 Hua
 
 ## 保持不变
 
-- `src/jnotes2hinote/converter_v1_0_0.py`：冻结的 v1.0.0 核心。
-- `CORE_SHA256.txt`：继续记录冻结核心的哈希。
+- `src/jnotes2hinote/converter_v1_0_0.py`：当前公开的 v1.0.0 历史核心，不再进行源码整理或行为调整。
+- `CORE_SHA256.txt`：继续记录该历史核心的当前哈希。
 
 冻结的 v1.0.0 核心 SHA-256：
 
-`ee551f236053b141f4f6d66425367cdf268a87f6b777c885b2a1c6f2553d7287`
+`5e8422ac8f6c05d6ced734e9c6a50095ff56719cf32de3237b41e21d0d98aee6`
 
 ## 删除
 
-无。缓存文件不纳入 `SHA256SUMS.txt`。
+- `GITHUB_SETUP.md`：一次性 GitHub 初始化说明，已不再是项目运行或发布所需文件。
+
+缓存文件不纳入 `SHA256SUMS.txt`。
