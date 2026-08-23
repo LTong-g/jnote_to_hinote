@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .converter_v1_1_0 import convert
+from .converter_v1_1_1 import convert
 
 
 def build_parser() -> argparse.ArgumentParser:

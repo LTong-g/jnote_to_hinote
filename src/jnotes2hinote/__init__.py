@@ -1,4 +1,4 @@
-from .converter_v1_1_0 import (
+from .converter_v1_1_1 import (
     TESTED_HUAWEI_NOTES_VERSION,
     TESTED_JNOTES_VERSION,
     __version__,
