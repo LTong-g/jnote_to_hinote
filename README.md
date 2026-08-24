@@ -1,44 +1,34 @@
 # Jnotes2Hinote
 
-将 **云记 / Jideos Jnotes 的 `.Jnotes`** 笔记转换为 **华为笔记 / Huawei Notes 的 `.hinote`**，并在已逆向确认的格式范围内尽量保留华为原生可编辑笔迹。
+把 **云记 / Jideos Jnotes 的 `.Jnotes` 笔记**转换为**华为笔记的 `.hinote` 文件**，并在支持范围内尽量保留可编辑的笔迹、图片和文本。
 
-> **已实机验证的版本组合：云记 3.2.3.2 → 华为笔记 15.0.14.295。** 其他版本目前均视为未验证。
+> **目前已实机验证的版本组合：云记 3.2.3.2 → 华为笔记 15.0.14.295。** 其他版本尚未验证，转换结果可能不同。
 
 英文文档：[README.en.md](README.en.md)
 
-## v1.1.1 已支持
+## 适合什么场景
+
+如果你有云记导出的 `.Jnotes` 文件，并希望在华为笔记中继续查看和编辑，可以使用本项目生成 `.hinote` 文件，再将它导入华为笔记。
+
+## 支持转换的内容
 
 - 多页笔记
-- 华为原生 PENCILENGINE 可编辑笔迹
-- 笔迹坐标与逐点压力值
-- 华为笔记 15.0.14.295 使用的 BGR 浮点颜色
-- 测试笔记中涉及的圆珠笔、钢笔、HB 铅笔、荧光笔
-- 已通过实机标定的荧光笔宽度与透明度
-- 已确认的 Jnotes type 6 / type 7 几何图形
-- 半透明 type 6 / subtype 12“荧光笔生成的曲线”迁移为华为原生荧光笔
-- 图片与图片型贴纸
+- 可编辑的手写笔迹，包括常用笔型、颜色和逐点压力
+- 部分线条、曲线、矩形和圆形等图形
+- 图片、图片型贴纸和封面
 - 基本文本框
-- 封面图片
-- 华为原生纸张模板
+- 常见的空白、横线、点阵和方格纸张
 
-## v1.1.1 不需要华为参考笔记
-
-转换器直接由代码生成经验证的 Huawei Notes 15.0.14.295 PENCILENGINE 文件头、样式记录、节点记录、笔迹链和已支持的几何结构，因此不再需要自行制作：
-
-- `reference.hinote`
-- `shape-reference.hinote`
-
-v1.0.0 的参考文件方案仍原样保存在 `src/jnotes2hinote/converter_v1_0_0.py`，历史核心不会被修改。
+转换结果以华为笔记文件的形式保存，不会把整页内容简单合并为一张图片。
 
 ## 安装
 
-```bash
-python -m venv .venv
-```
+需要 Python 3.10 或更高版本。请在项目根目录打开终端。
 
 Windows PowerShell：
 
 ```powershell
+python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e .
 ```
@@ -46,23 +36,26 @@ pip install -e .
 macOS/Linux：
 
 ```bash
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 ```
 
-## 使用
+## 转换笔记
+
+最简单的用法：
 
 ```bash
 jnotes2hinote input.Jnotes output.hinote
 ```
 
-或者：
+也可以使用 Python 模块方式运行：
 
 ```bash
 python -m jnotes2hinote input.Jnotes output.hinote
 ```
 
-输出 JSON 转换报告：
+转换时输出 JSON 报告：
 
 ```bash
 jnotes2hinote input.Jnotes output.hinote --report conversion-report.json
@@ -74,53 +67,48 @@ jnotes2hinote input.Jnotes output.hinote --report conversion-report.json
 jnotes2hinote input.Jnotes test.hinote --pages 5
 ```
 
-## 已知限制
+转换器只读取输入文件，并写入你指定的输出路径。请保留原始 `.Jnotes` 文件，并不要把输入和输出设为同一个路径。
 
-- **纸胶带：** 尚未确认华为原生等价对象；v1.1.1 会跳过，不会静默栅格化。
-- **音频：** 已理解双方相关存储结构，但 v1.1.1 尚未启用音频转换。
-- **文本排版：** 文本保持可编辑，但字体度量、换行和行距可能不同。
-- **普通笔宽：** 荧光笔已经实机标定；普通笔族之间的视觉等宽尚未完成完整标定。
-- **几何宽度：** 普通不透明 type 6/type 7 与普通笔迹采用相同的直接映射：Jnotes `d` 原值写入 Huawei `style+84`，包括小数宽度。
-- **版本兼容：** 当前仅实机验证云记 3.2.3.2 → 华为笔记 15.0.14.295。
+## 导入华为笔记
 
-转换重要笔记前请阅读 [docs/limitations.md](docs/limitations.md)，并保留原始文件备份。
+转换完成后，将生成的 `.hinote` 文件导入华为笔记，然后检查重要页面、图片、文本和笔迹是否符合预期。正式转换整本笔记前，建议先使用 `--pages` 转换少量页面进行确认。
 
-## 格式研究文档
+## 使用前请注意
 
-- [云记格式](docs/format-jnotes.md)
-- [Huawei `.hinote` / PENCILENGINE 格式](docs/format-hinote.md)
-- [映射规则](docs/mapping.md)
-- [兼容性](docs/compatibility.md)
-- [逆向过程](docs/reverse-engineering.md)
+- 当前只有云记 3.2.3.2 → 华为笔记 15.0.14.295 经过实机验证。
+- 纸胶带对象目前不会转换。
+- 音频目前不会转换。
+- 文本仍可编辑，但字体效果、换行和行距可能与原笔记不同。
+- 普通笔型的视觉粗细不一定与原笔记完全一致。
+- 部分图形或特殊对象可能无法完全保留原有外观。
+- 导入重要笔记前，请备份原始 `.Jnotes` 文件和华为笔记中的现有内容。
+
+本项目是基于逆向工程的非官方互操作工具，不是 Huawei 或 Jideos 的产品。建议先用副本进行测试，再处理重要资料。
+
+## 技术资料
+
+普通用户可以从上面的安装和转换步骤开始。以下文档面向希望了解格式、兼容性或转换细节的用户和开发者：
+
+- [限制与兼容性说明](docs/limitations.md)
+- [兼容性记录](docs/compatibility.md)
+- [云记文件格式](docs/format-jnotes.md)
+- [华为笔记文件格式](docs/format-hinote.md)
+- [转换映射规则](docs/mapping.md)
 - [v1.0.0 验证摘要](docs/validation-v1.0.0.md)
 - [v1.1.0 验证摘要](docs/validation-v1.1.0.md)
 - [v1.1.1 修复验证摘要](docs/validation-v1.1.1.md)
 
-## 安全与备份
-
-导入转换后的文件前，请始终保留原始 `.Jnotes` 文件，并导出或备份华为笔记。这个项目是基于逆向工程的非官方互操作工具，不是 Huawei 或 Jideos 的产品。
-
 ## 开发
+
+安装开发依赖并运行测试：
 
 ```bash
 pip install -e ".[dev]"
 pytest
 ```
 
-不同版本的转换核心分别保留：
-
-```text
-src/jnotes2hinote/converter_v1_0_0.py  # 冻结的旧版参考文件核心
-src/jnotes2hinote/converter_v1_1_0.py  # 历史 v1.1.0 自包含核心
-src/jnotes2hinote/converter_v1_1_1.py  # 当前自包含核心
-```
-
-后续行为变化应新增版本化核心，不要重写历史核心。
+贡献格式研究或代码前，请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 
 MIT，见 [LICENSE](LICENSE)。
-
-## 免责声明
-
-本项目独立且非官方，与 Jideos 或 Huawei 没有隶属、授权或赞助关系。项目中出现的产品和公司名称仅用于说明文件格式互操作关系。
