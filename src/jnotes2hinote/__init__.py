@@ -1,10 +1,11 @@
 from .converter_v1_1_1 import (
     TESTED_HUAWEI_NOTES_VERSION,
     TESTED_JNOTES_VERSION,
-    __version__,
     convert,
     parse_jnotes,
 )
+
+__version__ = "1.2.0"
 
 __all__ = [
     "__version__",

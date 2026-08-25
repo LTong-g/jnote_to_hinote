@@ -4,6 +4,8 @@ Convert **Jideos Jnotes / 云记 `.Jnotes` notebooks** into **Huawei Notes `.hin
 
 > **Currently device-tested compatibility:** Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295. Other versions are unverified and may produce different results.
 
+Current release: **v1.2.0**. In addition to single-file conversion, it supports batch conversion from directories, multiple input paths and text path lists.
+
 Chinese documentation: [README.md](README.md)
 
 ## What this project is for
@@ -54,6 +56,39 @@ You can also run it as a Python module:
 ```bash
 python -m jnotes2hinote input.Jnotes output.hinote
 ```
+
+## Batch conversion
+
+When the input is a directory, the default behavior converts `.Jnotes`/`.jnote` files directly inside that directory. The output argument must be a directory:
+
+```bash
+jnotes2hinote notes output
+```
+
+To recursively convert files in the directory and all of its subdirectories:
+
+```bash
+jnotes2hinote notes output --recursive
+```
+
+You can also provide multiple files or directories in one command:
+
+```bash
+jnotes2hinote notes-a notes-b one.Jnotes output
+```
+
+Alternatively, provide a text file containing one input path per line. Blank lines and lines beginning with `#` are ignored. Relative paths in the list are resolved relative to the list file's directory:
+
+```text
+notes-a
+notes-b/meeting.Jnotes
+```
+
+```bash
+jnotes2hinote paths.txt output --recursive
+```
+
+Batch conversion continues with the remaining paths when a path cannot be read, is invalid, or fails to convert. Errors are printed to the terminal and included in the batch report when `--report` is used. Output files use the source filename; duplicate names receive an automatic numeric suffix.
 
 Write a JSON conversion report:
 

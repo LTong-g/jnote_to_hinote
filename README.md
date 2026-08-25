@@ -4,6 +4,8 @@
 
 > **目前已实机验证的版本组合：云记 3.2.3.2 → 华为笔记 15.0.14.295。** 其他版本尚未验证，转换结果可能不同。
 
+当前发行版：**v1.2.0**。除单文件转换外，还支持目录、多个输入路径和 TXT 路径清单的批量转换。
+
 英文文档：[README.en.md](README.en.md)
 
 ## 适合什么场景
@@ -54,6 +56,39 @@ jnotes2hinote input.Jnotes output.hinote
 ```bash
 python -m jnotes2hinote input.Jnotes output.hinote
 ```
+
+## 批量转换
+
+输入目录时，默认只转换目录的直接子级中的 `.Jnotes`/`.jnote` 文件，输出参数必须是目录：
+
+```bash
+jnotes2hinote notes output
+```
+
+如果要递归转换目录及其所有子目录中的文件：
+
+```bash
+jnotes2hinote notes output --recursive
+```
+
+也可以一次输入多个文件或目录：
+
+```bash
+jnotes2hinote notes-a notes-b one.Jnotes output
+```
+
+如果有一个文本文件列出了要处理的路径，可以直接把它作为输入。每行一个路径；空行和以 `#` 开头的行会被忽略。清单中的相对路径以该文本文件所在目录为基准：
+
+```text
+notes-a
+notes-b/meeting.Jnotes
+```
+
+```bash
+jnotes2hinote paths.txt output --recursive
+```
+
+批量转换时会自动继续处理其他路径。无法读取、格式不正确或转换失败的路径会被跳过，并在终端输出错误；如果使用 `--report`，错误也会写入批量汇总报告。输出文件默认使用源文件名，重名时会自动追加序号。
 
 转换时输出 JSON 报告：
 
