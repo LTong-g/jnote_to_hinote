@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jnotes2hinote"
-version = "1.2.0"
+version = "1.3.0"
 description = "将经过设备验证的 Jideos 云记（.Jnotes）转换为华为笔记（.hinote），并保留原生可编辑笔迹"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,6 +16,7 @@ keywords = ["jnotes", "huawei-notes", "hinote", "note-converter", "reverse-engin
 classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",
+  "Environment :: X11 Applications",
   "Intended Audience :: End Users/Desktop",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
@@ -34,9 +35,15 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.6"
 ]
+build = [
+  "pyinstaller>=6.0"
+]
 
 [project.scripts]
 jnotes2hinote = "jnotes2hinote.cli:main"
+
+[project.gui-scripts]
+jnotes2hinote-gui = "jnotes2hinote.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

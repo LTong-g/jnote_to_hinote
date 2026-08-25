@@ -4,7 +4,7 @@ Convert **Jideos Jnotes / 云记 `.Jnotes` notebooks** into **Huawei Notes `.hin
 
 > **Currently device-tested compatibility:** Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295. Other versions are unverified and may produce different results.
 
-Current release: **v1.2.0**. In addition to single-file conversion, it supports batch conversion from directories, multiple input paths and text path lists.
+Current release: **v1.3.0**. In addition to command-line batch conversion, it provides a desktop GUI for everyday users.
 
 Chinese documentation: [README.md](README.md)
 
@@ -34,6 +34,20 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e .
 ```
+
+Start the desktop GUI:
+
+```bash
+jnotes2hinote-gui
+```
+
+You can also start it as a Python module:
+
+```bash
+python -m jnotes2hinote.gui
+```
+
+The GUI supports multiple `.Jnotes`/`.jnote` files, folders and TXT path lists, optional recursive scanning, progress, results and error logs. See the [GUI guide](docs/gui.en.md) for details.
 
 macOS/Linux:
 
@@ -126,6 +140,7 @@ Most users can start with the installation and conversion steps above. The follo
 
 - [Limitations and compatibility](docs/limitations.md)
 - [Compatibility record](docs/compatibility.md)
+- [GUI guide](docs/gui.en.md)
 - [Jnotes file format](docs/format-jnotes.md)
 - [Huawei Notes file format](docs/format-hinote.md)
 - [Conversion mapping rules](docs/mapping.md)

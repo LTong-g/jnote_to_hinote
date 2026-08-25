@@ -4,7 +4,7 @@
 
 > **目前已实机验证的版本组合：云记 3.2.3.2 → 华为笔记 15.0.14.295。** 其他版本尚未验证，转换结果可能不同。
 
-当前发行版：**v1.2.0**。除单文件转换外，还支持目录、多个输入路径和 TXT 路径清单的批量转换。
+当前发行版：**v1.3.0**。除命令行批量转换外，还提供面向普通用户的桌面图形界面。
 
 英文文档：[README.en.md](README.en.md)
 
@@ -34,6 +34,20 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e .
 ```
+
+启动桌面界面：
+
+```powershell
+jnotes2hinote-gui
+```
+
+也可以使用 Python 模块方式启动：
+
+```powershell
+python -m jnotes2hinote.gui
+```
+
+GUI 支持添加多个 `.Jnotes`/`.jnote` 文件、文件夹和 TXT 路径清单；可以选择是否递归搜索子目录，并在转换过程中显示进度、结果和错误日志。详细操作请见 [GUI 使用说明](docs/gui.md)。
 
 macOS/Linux：
 
@@ -126,6 +140,7 @@ jnotes2hinote input.Jnotes test.hinote --pages 5
 
 - [限制与兼容性说明](docs/limitations.md)
 - [兼容性记录](docs/compatibility.md)
+- [图形界面使用说明](docs/gui.md)
 - [云记文件格式](docs/format-jnotes.md)
 - [华为笔记文件格式](docs/format-hinote.md)
 - [转换映射规则](docs/mapping.md)
