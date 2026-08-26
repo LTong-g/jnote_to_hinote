@@ -1,31 +1,30 @@
 # Jnotes2Hinote
 
-把 **云记 / Jideos Jnotes 的 `.Jnotes` 笔记**转换为**华为笔记的 `.hinote` 文件**，并在支持范围内尽量保留可编辑的笔迹、图片和文本。
+将云记（Jnotes）的 `.Jnotes` / `.jnote` 笔记转换为华为笔记的 `.hinote` 文件，方便把笔记导入华为笔记后继续查看和编辑。
 
-> **目前已实机验证的版本组合：云记 3.2.3.2 → 华为笔记 15.0.14.295。** 其他版本尚未验证，转换结果可能不同。
+目前已实机验证的版本组合是：**云记 3.2.3.2 → 华为笔记 15.0.14.295**。其他版本没有经过验证，转换结果可能有所不同。
 
-当前发行版：**v1.3.0**。除命令行批量转换外，还提供面向普通用户的桌面图形界面。
+当前版本：**v1.3.0**。项目提供桌面图形界面，也支持命令行批量转换。
 
-英文文档：[README.en.md](README.en.md)
+英文版：[README.en.md](README.en.md)
 
-## 适合什么场景
+## 推荐用法：桌面界面
 
-如果你有云记导出的 `.Jnotes` 文件，并希望在华为笔记中继续查看和编辑，可以使用本项目生成 `.hinote` 文件，再将它导入华为笔记。
+如果你只是想转换笔记，建议使用图形界面。它支持选择多个文件、文件夹或路径清单，并会显示转换进度、成功结果和错误信息。
 
-## 支持转换的内容
+### 使用 Windows 打包版
 
-- 多页笔记
-- 可编辑的手写笔迹，包括常用笔型、颜色和逐点压力
-- 部分线条、曲线、矩形和圆形等图形
-- 图片、图片型贴纸和封面
-- 基本文本框
-- 常见的空白、横线、点阵和方格纸张
+如果你拿到的是 Windows 打包版，请运行：
 
-转换结果以华为笔记文件的形式保存，不会把整页内容简单合并为一张图片。
+```text
+dist/Jnotes2Hinote/Jnotes2Hinote.exe
+```
 
-## 安装
+请保留 `Jnotes2Hinote` 文件夹中的其他文件，不能只复制 exe 文件。打包版不需要另外安装 Python。
 
-需要 Python 3.10 或更高版本。请在项目根目录打开终端。
+### 从源码启动
+
+需要 Python 3.10 或更高版本。在项目根目录打开终端，执行：
 
 Windows PowerShell：
 
@@ -33,114 +32,120 @@ Windows PowerShell：
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -e .
-```
-
-启动桌面界面：
-
-```powershell
 jnotes2hinote-gui
 ```
 
-也可以使用 Python 模块方式启动：
-
-```powershell
-python -m jnotes2hinote.gui
-```
-
-GUI 支持添加多个 `.Jnotes`/`.jnote` 文件、文件夹和 TXT 路径清单；可以选择是否递归搜索子目录，并在转换过程中显示进度、结果和错误日志。详细操作请见 [GUI 使用说明](docs/gui.md)。
-
-macOS/Linux：
+macOS / Linux：
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
+python -m jnotes2hinote.gui
 ```
 
-## 转换笔记
+### 基本操作
 
-最简单的用法：
+1. 点击“添加文件”“添加文件夹”或“添加 TXT 清单”。
+2. 如需搜索文件夹内的所有子文件夹，勾选递归搜索。
+3. 选择输出文件夹，设置重名文件的处理方式，然后开始转换。
+
+程序会自动识别 `.Jnotes` 和 `.jnote` 文件。TXT 清单按每行一个路径读取；空行和以 `#` 开头的行会被忽略。某个路径无法读取或转换失败时，程序会记录错误并继续处理其他路径。
+
+GUI 的完整说明见：[图形界面使用说明](docs/gui.md)。
+
+## 命令行用法
+
+命令行适合需要脚本化处理或批量转换的情况。安装项目后，可以使用 `jnotes2hinote` 命令；也可以把下面的命令中的 `jnotes2hinote` 换成 `python -m jnotes2hinote`。
+
+### 转换一个文件
 
 ```bash
 jnotes2hinote input.Jnotes output.hinote
 ```
 
-也可以使用 Python 模块方式运行：
+### 转换文件夹
 
-```bash
-python -m jnotes2hinote input.Jnotes output.hinote
-```
-
-## 批量转换
-
-输入目录时，默认只转换目录的直接子级中的 `.Jnotes`/`.jnote` 文件，输出参数必须是目录：
+默认只处理文件夹的直接子级：
 
 ```bash
 jnotes2hinote notes output
 ```
 
-如果要递归转换目录及其所有子目录中的文件：
+如果要连同所有子文件夹一起处理，使用 `--recursive`：
 
 ```bash
 jnotes2hinote notes output --recursive
 ```
 
-也可以一次输入多个文件或目录：
+### 同时输入多个路径
+
+可以在一次命令中混合输入多个文件和文件夹：
 
 ```bash
-jnotes2hinote notes-a notes-b one.Jnotes output
+jnotes2hinote notes-a notes-b meeting.Jnotes output
 ```
 
-如果有一个文本文件列出了要处理的路径，可以直接把它作为输入。每行一个路径；空行和以 `#` 开头的行会被忽略。清单中的相对路径以该文本文件所在目录为基准：
+### 使用 TXT 路径清单
+
+TXT 文件每行写一个文件或文件夹路径：
 
 ```text
 notes-a
 notes-b/meeting.Jnotes
 ```
 
+然后将 TXT 文件作为输入：
+
 ```bash
 jnotes2hinote paths.txt output --recursive
 ```
 
-批量转换时会自动继续处理其他路径。无法读取、格式不正确或转换失败的路径会被跳过，并在终端输出错误；如果使用 `--report`，错误也会写入批量汇总报告。输出文件默认使用源文件名，重名时会自动追加序号。
+清单中的相对路径以 TXT 文件所在文件夹为基准。批量转换会跳过无效路径、无法读取的路径和转换失败的文件，并继续处理其余输入；错误会显示在终端中，也可以写入报告。
 
-转换时输出 JSON 报告：
+### 常用选项
+
+生成 JSON 转换报告：
 
 ```bash
-jnotes2hinote input.Jnotes output.hinote --report conversion-report.json
+jnotes2hinote notes output --recursive --report conversion-report.json
 ```
 
-测试时只转换前 5 页：
+先转换前 5 页进行测试：
 
 ```bash
 jnotes2hinote input.Jnotes test.hinote --pages 5
 ```
 
-转换器只读取输入文件，并写入你指定的输出路径。请保留原始 `.Jnotes` 文件，并不要把输入和输出设为同一个路径。
+批量转换时，输出参数必须是文件夹。输出文件默认使用原文件名；如果出现重名，命令行转换器会自动添加序号。输入和输出不要使用同一个路径，并建议保留原始 `.Jnotes` 文件。
 
-## 导入华为笔记
+## 转换内容与注意事项
 
-转换完成后，将生成的 `.hinote` 文件导入华为笔记，然后检查重要页面、图片、文本和笔迹是否符合预期。正式转换整本笔记前，建议先使用 `--pages` 转换少量页面进行确认。
+在支持范围内，转换结果会保留华为笔记中的可编辑内容，而不是把整页简单合并成一张图片。当前支持的内容包括：
 
-## 使用前请注意
+- 多页笔记
+- 可编辑的手写笔迹，包括常见笔型、颜色和逐点压力
+- 部分线条、曲线、矩形和圆形
+- 图片、图片型贴纸和封面
+- 基本文本框
+- 常见的空白、横线、点阵和方格纸张
 
-- 当前只有云记 3.2.3.2 → 华为笔记 15.0.14.295 经过实机验证。
-- 纸胶带对象目前不会转换。
-- 音频目前不会转换。
-- 文本仍可编辑，但字体效果、换行和行距可能与原笔记不同。
-- 普通笔型的视觉粗细不一定与原笔记完全一致。
-- 部分图形或特殊对象可能无法完全保留原有外观。
-- 导入重要笔记前，请备份原始 `.Jnotes` 文件和华为笔记中的现有内容。
+以下内容可能无法转换，或与原笔记显示不同：
 
-本项目是基于逆向工程的非官方互操作工具，不是 Huawei 或 Jideos 的产品。建议先用副本进行测试，再处理重要资料。
+- 纸胶带对象和音频目前不会转换
+- 文本仍可编辑，但字体、换行和行距可能变化
+- 普通笔型的视觉粗细可能与原笔记不同
+- 部分图形或特殊对象可能无法完全保留原有外观
 
-## 技术资料
+转换后请在华为笔记中检查重要页面、图片、文本和笔迹。处理重要资料前，请先备份原始笔记，并优先用副本进行测试。
 
-普通用户可以从上面的安装和转换步骤开始。以下文档面向希望了解格式、兼容性或转换细节的用户和开发者：
+本项目是基于逆向工程的非官方互操作工具，不是华为或 Jideos 的官方产品。
 
+## 其他文档
+
+- [图形界面使用说明](docs/gui.md)
 - [限制与兼容性说明](docs/limitations.md)
 - [兼容性记录](docs/compatibility.md)
-- [图形界面使用说明](docs/gui.md)
 - [云记文件格式](docs/format-jnotes.md)
 - [华为笔记文件格式](docs/format-hinote.md)
 - [转换映射规则](docs/mapping.md)
@@ -157,7 +162,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-贡献格式研究或代码前，请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+参与格式研究或代码开发前，请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 
