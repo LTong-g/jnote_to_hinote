@@ -77,4 +77,4 @@ TXT 清单中的空行和以 `#` 开头的行会被忽略。相对路径以 TXT 
 ./scripts/build_windows.ps1
 ```
 
-生成的程序位于 `dist/Jnotes2Hinote.exe`。打包程序仍然使用同一个 v1.1.1 转换核心。
+生成的程序位于 `dist/Jnotes2Hinote/Jnotes2Hinote.exe`。请保留同目录下的运行库文件；打包程序仍然使用同一个 v1.1.1 转换核心。
