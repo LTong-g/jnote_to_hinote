@@ -6,7 +6,7 @@ import collections
 import json
 from pathlib import Path
 
-from jnotes2hinote.converter_v1_1_2 import parse_jnotes
+from jnotes2hinote.converter_v1_2_0 import parse_jnotes
 
 
 def main() -> None:
@@ -15,6 +15,16 @@ def main() -> None:
     args = ap.parse_args()
 
     jn = parse_jnotes(args.input)
+    pdf_records = [record for record in jn.records if record.typ == "PDF"]
+    pdf_names = {
+        str(record.object_id).replace("\\", "/").rsplit("/", 1)[-1].casefold()
+        for record in pdf_records
+    }
+    pdf_refs = collections.Counter(
+        str(page.get("e", "")).replace("\\", "/").rsplit("/", 1)[-1].casefold()
+        for page in jn.pages
+        if str(page.get("e", "")).strip()
+    )
     pen_types = collections.Counter()
     geometry = collections.Counter()
     paper_tape = 0
@@ -43,6 +53,21 @@ def main() -> None:
         "文本框数": sum(len(v) for v in jn.texts.values()),
         "音频记录数": len(jn.audio_records),
         "纸胶带对象数": paper_tape,
+        "PDF记录数": len(pdf_records),
+        "PDF页面引用数": sum(pdf_refs.values()),
+        "PDF文件": [
+            {
+                "对象": str(record.object_id),
+                "字节数": len(record.payload),
+                "文件头正确": record.payload.startswith(b"%PDF-"),
+                "页面引用数": pdf_refs.get(
+                    str(record.object_id).replace("\\", "/").rsplit("/", 1)[-1].casefold(),
+                    0,
+                ),
+            }
+            for record in pdf_records
+        ],
+        "未匹配PDF引用数": sum(count for key, count in pdf_refs.items() if key not in pdf_names),
     }, ensure_ascii=False, indent=2))
 
 

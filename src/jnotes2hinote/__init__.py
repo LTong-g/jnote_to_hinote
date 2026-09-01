@@ -1,12 +1,12 @@
-from .converter_v1_1_2 import (
+from .converter_v1_2_0 import (
     TESTED_HUAWEI_NOTES_VERSION,
     TESTED_JNOTES_VERSION,
     convert,
     parse_jnotes,
 )
-from .converter_v1_1_2 import __version__ as CONVERTER_CORE_VERSION
+from .converter_v1_2_0 import __version__ as CONVERTER_CORE_VERSION
 
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 
 __all__ = [
     "__version__",

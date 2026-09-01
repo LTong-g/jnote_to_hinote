@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import collections
+import gzip
+import json
 import struct
 import zipfile
 from pathlib import Path
@@ -36,7 +38,33 @@ def main() -> None:
     pens = collections.Counter()
     shapes = collections.Counter()
     bins = 0
+    pdf_files = []
+    pdf_pages = []
     with zipfile.ZipFile(args.input) as z:
+        names = z.namelist()
+        pdf_files = [name for name in names if name.startswith("files/") and name.endswith("_pdf")]
+        top_names = [
+            name for name in names
+            if name.endswith(".jhinote") and "/" not in name and name != "custom_md.jhinote"
+        ]
+        pdf_attachment_ids = set()
+        if len(top_names) == 1:
+            top = json.loads(gzip.decompress(z.read(top_names[0])))
+            pdf_attachment_ids = {
+                str(item.get("id"))
+                for item in top.get("customNoteContent", {}).get("attachment", [])
+                if item.get("attachType") == 3
+            }
+        for name in names:
+            if not name.startswith("pages/"):
+                continue
+            page = json.loads(gzip.decompress(z.read(name))).get("customNotePageContent", {})
+            if page.get("bkgAttachmentId") or page.get("bkgAttachmentIndex"):
+                pdf_pages.append({
+                    "page": page.get("pageNumber"),
+                    "attachmentId": page.get("bkgAttachmentId"),
+                    "pdfPageIndex": page.get("bkgAttachmentIndex"),
+                })
         for name in z.namelist():
             if not (name.startswith("files/") and name.endswith(".bin")):
                 continue
@@ -57,6 +85,12 @@ def main() -> None:
     print("PENCILENGINE 文件数：", bins)
     print("pen_type 数量：", dict(sorted(pens.items())))
     print("图形代码数量：", dict(sorted(shapes.items())))
+    print("PDF 文件数：", len(pdf_files))
+    print("PDF 顶层附件数：", len(pdf_attachment_ids))
+    print("PDF 背景页面数：", len(pdf_pages))
+    if pdf_pages:
+        pdf_pages.sort(key=lambda item: int(item.get("page") or 0))
+        print("PDF 页面索引：", [item["pdfPageIndex"] for item in pdf_pages])
 
 
 if __name__ == "__main__":

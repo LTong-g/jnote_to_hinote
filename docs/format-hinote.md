@@ -17,6 +17,31 @@ custom_md.jhinote
 
 手写内容位于 `files/*.bin` PENCILENGINE 文件中。
 
+## 原生 PDF 笔记
+
+PDF 笔记将原始 PDF 作为一个顶层附件保存，而不是将每一页转换成图片：
+
+```text
+顶层 <note-id>.jhinote
+    customNoteContent.attachment[].attachType = 3
+    customNoteContent.attachment[].id = <pdf-attachment-id>
+
+files/<uuid>_pdf
+    原始 PDF 字节
+```
+
+每个 PDF 页面在 `pages/<page-id>.jhinote` 中使用：
+
+```json
+{
+  "background": "base1",
+  "bkgAttachmentId": "<pdf-attachment-id>",
+  "bkgAttachmentIndex": 0
+}
+```
+
+`bkgAttachmentIndex` 是 PDF 的从零开始页面索引。页面的 PENCILENGINE 附件、图片和文本元素继续作为 PDF 上方的可编辑覆盖层。导入 PDF 笔记通常使用 `noteType=101` 和 `noteIcon=import_pdf`；页面缩略图是预览用途，不能代替 PDF 页面正文。
+
 ## v15.0.14.295 使用的 PENCILENGINE 布局
 
 经过测试的普通手写文件使用：

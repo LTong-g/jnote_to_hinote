@@ -4,7 +4,7 @@ Convert Jnotes notebooks (`.Jnotes` / `.jnote`) into Huawei Notes `.hinote` file
 
 The currently device-tested version combination is **Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295**. Other versions have not been verified and may produce different results.
 
-Current version: **v1.3.1**. The project provides a desktop GUI as well as command-line batch conversion.
+Current version: **v1.4.0**. The project provides a desktop GUI as well as command-line batch conversion.
 
 Chinese version: [README.md](README.md)
 
@@ -124,15 +124,17 @@ For batch conversion, the output argument must be a folder. Output files use the
 Within the supported range, the result keeps editable Huawei Notes content instead of flattening each page into a single image. Current support includes:
 
 - Multi-page notebooks
+- Original PDF pages for PDF-backed notebooks; PDF content is not rasterized
 - Editable handwriting, including common pen types, colors and per-point pressure
 - Some lines, curves, rectangles and circles
-- Images, image-based stickers and covers
+- Images, image-based stickers and page thumbnails
 - Basic text boxes
 - Common blank, ruled, dotted and grid paper backgrounds
 
 The following content may not be converted or may look different from the source:
 
 - Paper tape objects and audio are not currently converted
+- PDF notebooks depend on Huawei Notes' imported-PDF support; encrypted PDFs and mixed multi-PDF pages are not device-tested yet
 - Text remains editable, but fonts, wrapping and line spacing may change
 - Ordinary pen widths may look different from the source
 - Some shapes or special objects may not retain their original appearance completely
@@ -153,6 +155,7 @@ This is an unofficial interoperability tool based on reverse engineering, not an
 - [v1.1.0 validation summary](docs/validation-v1.1.0.md)
 - [v1.1.1 fix validation summary](docs/validation-v1.1.1.md)
 - [v1.1.2 fix validation summary](docs/validation-v1.1.2.md)
+- [v1.2.0 PDF conversion validation summary](docs/validation-v1.2.0.md)
 
 ## Development
 

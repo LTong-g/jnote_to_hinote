@@ -1,6 +1,19 @@
 # 映射规则
 
-## v1.1.2 实现说明
+## v1.2.0 实现说明
+
+### PDF 页面
+
+Jnotes 中的原始 PDF 会被完整复制到 Hinote 的 `files/<uuid>_pdf`，并作为顶层 `attachType=3` 附件登记。每个引用 PDF 的页面设置：
+
+| Jnotes 字段 | Hinote 字段 |
+|---|---|
+| `PDF.payload` | `files/<uuid>_pdf` |
+| `PAGE.e` | 对应的 PDF 附件 |
+| `PAGE.c` | `bkgAttachmentIndex` |
+| `PAGE.k / PAGE.l` | 页面比例和页面坐标换算 |
+
+PDF 页面不会被转换成正文图片；`COVER` 只用于页面缩略图。PDF 页面上的笔迹、图片和文本仍作为独立的可编辑内容保存。
 
 ### 普通笔型映射
 

@@ -25,6 +25,7 @@ TRY
 - `STROKE`
 - `IMAGE`
 - `TEXT`
+- `PDF`
 - `COVER`
 - `AUDIO_EX`
 
@@ -42,6 +43,18 @@ TRY
 | `k[]` | 采样后的最终路径 |
 
 测试格式中的 `k[]` 每个点至少包含 x/y 和类似压力的数据。
+
+## PDF 页面
+
+PDF 笔记通常包含一个 `PDF` 记录以及多个 `PAGE` 记录：
+
+- `PDF.payload` 是完整的原始 PDF 字节；
+- `PDF.object_id` 是 PDF 文件名；
+- `PAGE.e` 指向该 PDF 文件；
+- `PAGE.c` 是 PDF 的从零开始页面索引；
+- `PAGE.k` 和 `PAGE.l` 保存当前页面的宽度和高度。
+
+页面上的 `STROKE`、`IMAGE` 和 `TEXT` 记录仍通过 `PAGE.a` 页面 UUID 作为覆盖层保存。`PDF` 内容不应被当作封面图片或普通页面图片处理。
 
 ### 受控样本中确认的类型映射
 
