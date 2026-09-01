@@ -1,6 +1,6 @@
 import struct
 
-from jnotes2hinote.converter_v1_1_1 import _parse_normal_pencilengine, build_pencilengine
+from jnotes2hinote.converter_v1_1_2 import _parse_normal_pencilengine, build_pencilengine
 
 
 def _stroke(x0, y0, x1, y1):

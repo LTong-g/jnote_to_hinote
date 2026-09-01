@@ -14,7 +14,7 @@ from typing import Any
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from . import __version__
+from . import CONVERTER_CORE_VERSION, __version__
 from .batch import (
     CONFLICT_OVERWRITE,
     CONFLICT_RENAME,
@@ -117,7 +117,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "add_invalid": "以下路径不是支持的输入类型，已忽略：\n\n{paths}",
         "report_error": "报告写入失败：{error}",
         "about_title": "关于 Jnotes2Hinote",
-        "about": "Jnotes2Hinote {version}\n\n将云记 Jnotes 笔记转换为华为笔记 Hinote。\n\n当前转换核心：v1.1.1\n当前项目发行版：v{version}",
+        "about": "Jnotes2Hinote {version}\n\n将云记 Jnotes 笔记转换为华为笔记 Hinote。\n\n当前转换核心：v{core_version}\n当前项目发行版：v{version}",
         "help_title": "使用说明",
         "help_text": "1. 添加一个或多个 Jnotes 文件、文件夹或 TXT 清单。\n2. 需要搜索子目录时勾选“包含子目录中的文件”。\n3. 选择输出目录和文件重名策略。\n4. 点击“开始转换”，程序会在后台运行并显示进度。\n5. 单个文件失败不会阻止其余文件继续转换。\n\nTXT 清单每行一个路径，空行和以 # 开头的行会被忽略；相对路径以清单所在目录为基准。",
         "log_added": "已添加输入：{path}",
@@ -220,7 +220,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "add_invalid": "These paths are not supported input types and were ignored:\n\n{paths}",
         "report_error": "Could not write the report: {error}",
         "about_title": "About Jnotes2Hinote",
-        "about": "Jnotes2Hinote {version}\n\nConvert Jnotes notebooks to Huawei Notes Hinote.\n\nConversion core: v1.1.1\nProject release: v{version}",
+        "about": "Jnotes2Hinote {version}\n\nConvert Jnotes notebooks to Huawei Notes Hinote.\n\nConversion core: v{core_version}\nProject release: v{version}",
         "help_title": "Usage",
         "help_text": "1. Add one or more Jnotes files, folders or TXT lists.\n2. Enable subdirectory scanning when needed.\n3. Choose an output directory and a conflict strategy.\n4. Click Start conversion; the task runs in the background.\n5. A failure for one file does not stop the remaining files.\n\nTXT lists contain one path per line. Blank lines and lines beginning with # are ignored; relative paths are resolved next to the list file.",
         "log_added": "Added input: {path}",
@@ -1070,7 +1070,11 @@ class Jnotes2HinoteApp:
         messagebox.showinfo(self._t("help_title"), self._t("help_text"), parent=self.root)
 
     def _show_about(self) -> None:
-        messagebox.showinfo(self._t("about_title"), self._t("about", version=__version__), parent=self.root)
+        messagebox.showinfo(
+            self._t("about_title"),
+            self._t("about", version=__version__, core_version=CONVERTER_CORE_VERSION),
+            parent=self.root,
+        )
 
     def _save_settings(self) -> None:
         try:

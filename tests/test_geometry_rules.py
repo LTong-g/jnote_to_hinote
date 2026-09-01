@@ -3,7 +3,7 @@ import struct
 
 import pytest
 
-from jnotes2hinote.converter_v1_1_1 import (
+from jnotes2hinote.converter_v1_1_2 import (
     J_GEOMETRY_TO_HW_SHAPE,
     _build_geometry_body,
     _geometry_width_direct,

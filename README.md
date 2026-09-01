@@ -4,7 +4,7 @@
 
 目前已实机验证的版本组合是：**云记 3.2.3.2 → 华为笔记 15.0.14.295**。其他版本没有经过验证，转换结果可能有所不同。
 
-当前版本：**v1.3.0**。项目提供桌面图形界面，也支持命令行批量转换。
+当前版本：**v1.3.1**。项目提供桌面图形界面，也支持命令行批量转换。
 
 英文版：[README.en.md](README.en.md)
 
@@ -152,6 +152,7 @@ jnotes2hinote input.Jnotes test.hinote --pages 5
 - [v1.0.0 验证摘要](docs/validation-v1.0.0.md)
 - [v1.1.0 验证摘要](docs/validation-v1.1.0.md)
 - [v1.1.1 修复验证摘要](docs/validation-v1.1.1.md)
+- [v1.1.2 修复验证摘要](docs/validation-v1.1.2.md)
 
 ## 开发
 

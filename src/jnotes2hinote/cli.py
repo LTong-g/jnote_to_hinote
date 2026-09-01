@@ -13,7 +13,7 @@ from .batch import (
     convert_batch,
     plan_output_paths,
 )
-from .converter_v1_1_1 import convert
+from .converter_v1_1_2 import convert
 
 
 def non_negative_int(value: str) -> int:
