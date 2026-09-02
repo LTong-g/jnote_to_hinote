@@ -417,7 +417,17 @@ class Jnotes2HinoteApp:
         self.button_widgets["help"] = ttk.Button(header_right, command=self._show_help)
         self.button_widgets["help"].grid(row=0, column=3)
 
-        workspace = ttk.PanedWindow(main, orient="horizontal")
+        workspace = tk.PanedWindow(
+            main,
+            orient="horizontal",
+            borderwidth=0,
+            handlepad=0,
+            handlesize=8,
+            sashpad=0,
+            sashrelief="raised",
+            sashwidth=5,
+            showhandle=False,
+        )
         workspace.grid(row=1, column=0, sticky="nsew", pady=(0, 8))
         left_column = ttk.Frame(workspace)
         left_column.columnconfigure(0, weight=1)
@@ -425,8 +435,8 @@ class Jnotes2HinoteApp:
         right_column = ttk.Frame(workspace)
         right_column.columnconfigure(0, weight=1)
         right_column.rowconfigure(0, weight=1)
-        workspace.add(left_column, weight=1)
-        workspace.add(right_column, weight=1)
+        workspace.add(left_column, minsize=420, stretch="always")
+        workspace.add(right_column, minsize=460, stretch="always")
         self.workspace_pane = workspace
 
         input_frame = ttk.LabelFrame(left_column)
@@ -530,10 +540,20 @@ class Jnotes2HinoteApp:
 
         progress_frame = ttk.LabelFrame(right_column)
         log_frame = ttk.LabelFrame(right_column)
-        results_log = ttk.PanedWindow(right_column, orient="vertical")
+        results_log = tk.PanedWindow(
+            right_column,
+            orient="vertical",
+            borderwidth=0,
+            handlepad=0,
+            handlesize=8,
+            sashpad=0,
+            sashrelief="raised",
+            sashwidth=5,
+            showhandle=False,
+        )
         results_log.grid(row=0, column=0, sticky="nsew")
-        results_log.add(progress_frame, weight=3)
-        results_log.add(log_frame, weight=2)
+        results_log.add(progress_frame, minsize=280, stretch="always")
+        results_log.add(log_frame, minsize=180, stretch="always")
         self.results_log_pane = results_log
         progress_frame.columnconfigure(0, weight=1)
         progress_frame.rowconfigure(1, weight=1)
