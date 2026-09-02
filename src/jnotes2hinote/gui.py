@@ -538,8 +538,6 @@ class Jnotes2HinoteApp:
         self.check_widgets["open_output_after"] = ttk.Checkbutton(output_frame, variable=self.open_output_var)
         self.check_widgets["open_output_after"].grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 8))
 
-        progress_frame = ttk.LabelFrame(right_column)
-        log_frame = ttk.LabelFrame(right_column)
         results_log = tk.PanedWindow(
             right_column,
             orient="vertical",
@@ -552,6 +550,8 @@ class Jnotes2HinoteApp:
             showhandle=False,
         )
         results_log.grid(row=0, column=0, sticky="nsew")
+        progress_frame = ttk.LabelFrame(results_log)
+        log_frame = ttk.LabelFrame(results_log)
         results_log.add(progress_frame, minsize=280, stretch="always")
         results_log.add(log_frame, minsize=180, stretch="always")
         self.results_log_pane = results_log

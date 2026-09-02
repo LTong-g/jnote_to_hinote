@@ -3,7 +3,7 @@ import pytest
 pytest.importorskip("tkinter")
 import tkinter as tk
 
-from jnotes2hinote.gui import parse_drop_paths, parse_page_limit
+from jnotes2hinote.gui import Jnotes2HinoteApp, create_root, parse_drop_paths, parse_page_limit
 
 
 def test_parse_page_limit():
@@ -50,3 +50,20 @@ def test_parse_drop_paths_returns_empty_for_blank_or_malformed_data():
 
     assert parse_drop_paths("", malformed) == ()
     assert parse_drop_paths("{unterminated", malformed) == ()
+
+
+def test_layout_paned_windows_own_their_children():
+    try:
+        root = create_root()
+    except tk.TclError:
+        pytest.skip("Tk display is unavailable")
+
+    try:
+        root.withdraw()
+        app = Jnotes2HinoteApp(root)
+        for pane_name in app.workspace_pane.panes():
+            assert root.nametowidget(pane_name).winfo_parent() == str(app.workspace_pane)
+        for pane_name in app.results_log_pane.panes():
+            assert root.nametowidget(pane_name).winfo_parent() == str(app.results_log_pane)
+    finally:
+        root.destroy()
