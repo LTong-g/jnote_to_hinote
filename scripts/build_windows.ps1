@@ -51,6 +51,7 @@ $pyInstallerArgs = @(
     "--distpath", "dist",
     "--workpath", "build\pyinstaller",
     "--specpath", "build\pyinstaller",
+    "--additional-hooks-dir", "scripts\pyinstaller-hooks",
     "--hidden-import", "PyPDF2"
 )
 foreach ($module in $excludeModules) {

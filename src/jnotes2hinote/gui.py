@@ -8,11 +8,17 @@ import queue
 import subprocess
 import sys
 import threading
+import tkinter as tk
+from collections.abc import Callable
 from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+try:
+    from tkinterdnd2 import DND_FILES, TkinterDnD
+except ImportError:  # pragma: no cover - exercised only in source installs without extras
+    DND_FILES = None
+    TkinterDnD = None
 
 from . import CONVERTER_CORE_VERSION, __version__
 from .batch import (
@@ -41,7 +47,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "remove_selected": "移除选中",
         "clear": "清空",
         "recursive": "包含子目录中的文件",
-        "input_help": "可以混合添加文件、文件夹和 TXT 路径清单；相同文件只会转换一次。",
+        "input_help": "可以混合添加文件、文件夹和 TXT 路径清单，也可以将它们拖到上方列表；相同文件只会转换一次。",
         "output_section": "输出设置",
         "output_dir": "输出目录：",
         "browse": "浏览…",
@@ -144,7 +150,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "remove_selected": "Remove selected",
         "clear": "Clear",
         "recursive": "Include files in subdirectories",
-        "input_help": "Files, folders and TXT path lists can be mixed; the same file is converted only once.",
+        "input_help": "Files, folders and TXT path lists can be mixed or dropped onto the list; the same file is converted only once.",
         "output_section": "Output settings",
         "output_dir": "Output directory:",
         "browse": "Browse…",
@@ -281,6 +287,29 @@ def parse_page_limit(value: str) -> int | None:
     return number or None
 
 
+def parse_drop_paths(data: str, splitlist: Callable[[str], tuple[str, ...]]) -> tuple[str, ...]:
+    """Parse a TkDND file-list payload without breaking paths containing spaces."""
+
+    if not isinstance(data, str) or not data.strip():
+        return ()
+    try:
+        return tuple(path for path in splitlist(data) if path)
+    except (tk.TclError, TypeError):
+        return ()
+
+
+def create_root() -> tk.Tk:
+    """Create a Tk root with native file-drop support when TkDND is available."""
+
+    if TkinterDnD is not None:
+        try:
+            return TkinterDnD.Tk()
+        except tk.TclError:
+            # Keep the button-based workflow usable if a local TkDND binary is missing.
+            pass
+    return tk.Tk()
+
+
 class Jnotes2HinoteApp:
     """Tkinter application controller and view."""
 
@@ -338,15 +367,15 @@ class Jnotes2HinoteApp:
 
     def _build_ui(self) -> None:
         self.root.title(APP_NAME)
-        self.root.minsize(860, 640)
+        self.root.minsize(1000, 680)
         geometry = self.settings.get("geometry")
         if isinstance(geometry, str) and geometry:
             try:
                 self.root.geometry(geometry)
             except tk.TclError:
-                self.root.geometry("980x760")
+                self.root.geometry("1200x760")
         else:
-            self.root.geometry("980x760")
+            self.root.geometry("1200x760")
 
         style = ttk.Style(self.root)
         try:
@@ -355,6 +384,7 @@ class Jnotes2HinoteApp:
             pass
         style.configure("Accent.TButton", padding=(14, 7))
         style.configure("Status.TLabel", foreground="#555555")
+        style.configure("DropHint.TLabel", foreground="#146c2e")
 
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -362,8 +392,6 @@ class Jnotes2HinoteApp:
         main.grid(row=0, column=0, sticky="nsew")
         main.columnconfigure(0, weight=1)
         main.rowconfigure(1, weight=1)
-        main.rowconfigure(3, weight=1)
-        main.rowconfigure(4, weight=1)
 
         header = ttk.Frame(main)
         header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
@@ -389,47 +417,67 @@ class Jnotes2HinoteApp:
         self.button_widgets["help"] = ttk.Button(header_right, command=self._show_help)
         self.button_widgets["help"].grid(row=0, column=3)
 
-        input_frame = ttk.LabelFrame(main)
-        input_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 8))
+        workspace = ttk.PanedWindow(main, orient="horizontal")
+        workspace.grid(row=1, column=0, sticky="nsew", pady=(0, 8))
+        left_column = ttk.Frame(workspace)
+        left_column.columnconfigure(0, weight=1)
+        left_column.rowconfigure(0, weight=1)
+        right_column = ttk.Frame(workspace)
+        right_column.columnconfigure(0, weight=1)
+        right_column.rowconfigure(0, weight=1)
+        workspace.add(left_column, weight=1)
+        workspace.add(right_column, weight=1)
+        self.workspace_pane = workspace
+
+        input_frame = ttk.LabelFrame(left_column)
+        input_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
         input_frame.columnconfigure(0, weight=1)
-        input_frame.rowconfigure(1, weight=1)
+        input_frame.rowconfigure(2, weight=1)
         self.text_widgets["input_section"] = input_frame
 
         input_toolbar = ttk.Frame(input_frame)
         input_toolbar.grid(row=0, column=0, sticky="ew", padx=8, pady=8)
-        for column in range(5):
-            input_toolbar.columnconfigure(column, weight=0)
-        for index, (key, command) in enumerate((
+        add_actions = (
             ("add_files", self._add_files),
             ("add_folder", self._add_folder),
             ("add_manifest", self._add_manifest),
+        )
+        manage_actions = (
             ("remove_selected", self._remove_selected),
             ("clear", self._clear_sources),
-        )):
-            button = ttk.Button(input_toolbar, command=command)
-            button.grid(row=0, column=index, padx=(0, 6))
-            self.button_widgets[key] = button
+        )
+        for row, actions in enumerate((add_actions, manage_actions)):
+            action_frame = ttk.Frame(input_toolbar)
+            action_frame.grid(row=row, column=0, sticky="w", pady=(0, 4) if row == 0 else 0)
+            for index, (key, command) in enumerate(actions):
+                button = ttk.Button(action_frame, command=command)
+                button.grid(row=0, column=index, padx=(0, 6))
+                self.button_widgets[key] = button
+
         tree_frame = ttk.Frame(input_frame)
-        tree_frame.grid(row=1, column=0, sticky="nsew", padx=8)
+        tree_frame.grid(row=2, column=0, sticky="nsew", padx=8)
         tree_frame.columnconfigure(0, weight=1)
         tree_frame.rowconfigure(0, weight=1)
+        self.input_drop_target = tree_frame
         self.source_tree = ttk.Treeview(
             tree_frame,
             columns=("type", "path", "count", "status"),
             show="headings",
             selectmode="extended",
-            height=6,
+            height=10,
         )
         self.source_tree.grid(row=0, column=0, sticky="nsew")
         source_scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=self.source_tree.yview)
         source_scroll.grid(row=0, column=1, sticky="ns")
-        self.source_tree.configure(yscrollcommand=source_scroll.set)
+        source_hscroll = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.source_tree.xview)
+        source_hscroll.grid(row=1, column=0, columnspan=2, sticky="ew")
+        self.source_tree.configure(yscrollcommand=source_scroll.set, xscrollcommand=source_hscroll.set)
         self.source_tree.bind("<Double-1>", self._open_source_location)
         self.source_tree.bind("<Button-3>", self._show_source_menu)
-        self.source_tree.column("type", width=80, anchor="center", stretch=False)
-        self.source_tree.column("path", width=560, anchor="w")
-        self.source_tree.column("count", width=80, anchor="center", stretch=False)
-        self.source_tree.column("status", width=120, anchor="center", stretch=False)
+        self.source_tree.column("type", width=70, minwidth=60, anchor="center", stretch=False)
+        self.source_tree.column("path", width=320, minwidth=180, anchor="w")
+        self.source_tree.column("count", width=70, minwidth=55, anchor="center", stretch=False)
+        self.source_tree.column("status", width=95, minwidth=75, anchor="center", stretch=False)
         self.source_menu = tk.Menu(self.root, tearoff=False)
         self.source_menu.add_command(command=self._open_source_location)
         self.source_menu.add_command(command=self._copy_source_path)
@@ -437,18 +485,18 @@ class Jnotes2HinoteApp:
         self.source_menu.add_command(command=self._remove_selected)
 
         input_bottom = ttk.Frame(input_frame)
-        input_bottom.grid(row=2, column=0, sticky="ew", padx=8, pady=(7, 8))
+        input_bottom.grid(row=3, column=0, sticky="ew", padx=8, pady=(7, 8))
         self.check_widgets["recursive"] = ttk.Checkbutton(
             input_bottom,
             variable=self.recursive_var,
             command=self._mark_sources_pending,
         )
         self.check_widgets["recursive"].grid(row=0, column=0, sticky="w")
-        self.text_widgets["input_help"] = ttk.Label(input_bottom, style="Status.TLabel")
+        self.text_widgets["input_help"] = ttk.Label(input_bottom, style="Status.TLabel", wraplength=500)
         self.text_widgets["input_help"].grid(row=1, column=0, sticky="w", pady=(4, 0))
 
-        output_frame = ttk.LabelFrame(main)
-        output_frame.grid(row=2, column=0, sticky="ew", pady=(0, 8))
+        output_frame = ttk.LabelFrame(left_column)
+        output_frame.grid(row=1, column=0, sticky="ew")
         output_frame.columnconfigure(1, weight=1)
         self.text_widgets["output_section"] = output_frame
         self.text_widgets["output_dir"] = ttk.Label(output_frame)
@@ -480,8 +528,13 @@ class Jnotes2HinoteApp:
         self.check_widgets["open_output_after"] = ttk.Checkbutton(output_frame, variable=self.open_output_var)
         self.check_widgets["open_output_after"].grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 8))
 
-        progress_frame = ttk.LabelFrame(main)
-        progress_frame.grid(row=3, column=0, sticky="nsew", pady=(0, 8))
+        progress_frame = ttk.LabelFrame(right_column)
+        log_frame = ttk.LabelFrame(right_column)
+        results_log = ttk.PanedWindow(right_column, orient="vertical")
+        results_log.grid(row=0, column=0, sticky="nsew")
+        results_log.add(progress_frame, weight=3)
+        results_log.add(log_frame, weight=2)
+        self.results_log_pane = results_log
         progress_frame.columnconfigure(0, weight=1)
         progress_frame.rowconfigure(1, weight=1)
         self.text_widgets["progress_section"] = progress_frame
@@ -490,7 +543,7 @@ class Jnotes2HinoteApp:
         summary_bar.columnconfigure(0, weight=1)
         self.summary_label = ttk.Label(summary_bar, textvariable=self.summary_var)
         self.summary_label.grid(row=0, column=0, sticky="w")
-        self.progress_bar = ttk.Progressbar(summary_bar, mode="determinate", length=250)
+        self.progress_bar = ttk.Progressbar(summary_bar, mode="determinate", length=220)
         self.progress_bar.grid(row=0, column=1, sticky="e")
         self.current_label = ttk.Label(progress_frame, textvariable=self.current_var, style="Status.TLabel")
         self.current_label.grid(row=2, column=0, sticky="w", padx=8, pady=(5, 8))
@@ -503,33 +556,33 @@ class Jnotes2HinoteApp:
             result_frame,
             columns=("source", "output", "status", "detail"),
             show="headings",
-            height=5,
+            height=8,
         )
         self.result_tree.grid(row=0, column=0, sticky="nsew")
         result_scroll = ttk.Scrollbar(result_frame, orient="vertical", command=self.result_tree.yview)
         result_scroll.grid(row=0, column=1, sticky="ns")
-        self.result_tree.configure(yscrollcommand=result_scroll.set)
-        self.result_tree.column("source", width=300, anchor="w")
-        self.result_tree.column("output", width=300, anchor="w")
-        self.result_tree.column("status", width=90, anchor="center", stretch=False)
-        self.result_tree.column("detail", width=260, anchor="w")
+        result_hscroll = ttk.Scrollbar(result_frame, orient="horizontal", command=self.result_tree.xview)
+        result_hscroll.grid(row=1, column=0, columnspan=2, sticky="ew")
+        self.result_tree.configure(yscrollcommand=result_scroll.set, xscrollcommand=result_hscroll.set)
+        self.result_tree.column("source", width=190, minwidth=150, anchor="w")
+        self.result_tree.column("output", width=190, minwidth=150, anchor="w")
+        self.result_tree.column("status", width=75, minwidth=65, anchor="center", stretch=False)
+        self.result_tree.column("detail", width=190, minwidth=140, anchor="w")
         self.result_tree.tag_configure("converted", foreground="#146c2e")
         self.result_tree.tag_configure("failed", foreground="#a61b1b")
         self.result_tree.tag_configure("skipped", foreground="#8a5a00")
 
-        log_frame = ttk.LabelFrame(main)
-        log_frame.grid(row=4, column=0, sticky="nsew", pady=(0, 8))
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
         self.text_widgets["log_section"] = log_frame
-        self.log_text = tk.Text(log_frame, height=5, wrap="word", state="disabled", undo=False)
+        self.log_text = tk.Text(log_frame, height=8, wrap="word", state="disabled", undo=False)
         self.log_text.grid(row=0, column=0, sticky="nsew", padx=(8, 0), pady=8)
         log_scroll = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
         log_scroll.grid(row=0, column=1, sticky="ns", padx=(0, 8), pady=8)
         self.log_text.configure(yscrollcommand=log_scroll.set)
 
         footer = ttk.Frame(main)
-        footer.grid(row=5, column=0, sticky="ew")
+        footer.grid(row=2, column=0, sticky="ew")
         footer.columnconfigure(0, weight=1)
         self.status_label = ttk.Label(footer, textvariable=self.status_var, style="Status.TLabel")
         self.status_label.grid(row=0, column=0, sticky="w")
@@ -557,14 +610,58 @@ class Jnotes2HinoteApp:
             self.check_widgets["open_output_after"],
             self.language_combo,
         ])
+        self._setup_drag_and_drop(input_frame)
         self._update_report_state()
+
+    def _setup_drag_and_drop(self, input_frame: ttk.LabelFrame) -> None:
+        """Register the input area as a native file-drop target when TkDND is available."""
+
+        self._drop_target_widgets: tuple[tk.Widget, ...] = ()
+        self._drop_highlighted = False
+        if DND_FILES is None or not hasattr(self.input_drop_target, "drop_target_register"):
+            return
+        targets = (input_frame, self.input_drop_target, self.source_tree)
+        registered: list[tk.Widget] = []
+        for widget in targets:
+            try:
+                widget.drop_target_register(DND_FILES)  # type: ignore[attr-defined]
+                widget.dnd_bind("<<DropEnter>>", self._on_drop_enter)  # type: ignore[attr-defined]
+                widget.dnd_bind("<<DropPosition>>", self._on_drop_position)  # type: ignore[attr-defined]
+                widget.dnd_bind("<<DropLeave>>", self._on_drop_leave)  # type: ignore[attr-defined]
+                widget.dnd_bind("<<Drop>>", self._on_drop)  # type: ignore[attr-defined]
+                registered.append(widget)
+            except tk.TclError:
+                continue
+        self._drop_target_widgets = tuple(registered)
+
+    def _on_drop_enter(self, _event: tk.Event) -> str:
+        if self.phase != "idle":
+            return "refuse_drop"
+        self._drop_highlighted = True
+        self.text_widgets["input_help"].configure(style="DropHint.TLabel")
+        return "copy"
+
+    def _on_drop_position(self, _event: tk.Event) -> str:
+        return "copy" if self.phase == "idle" else "refuse_drop"
+
+    def _on_drop_leave(self, _event: tk.Event) -> None:
+        self._drop_highlighted = False
+        self.text_widgets["input_help"].configure(style="Status.TLabel")
+
+    def _on_drop(self, event: tk.Event) -> str:
+        self._on_drop_leave(event)
+        if self.phase != "idle":
+            return "refuse_drop"
+        data = getattr(event, "data", "")
+        paths = parse_drop_paths(data, self.root.tk.splitlist)
+        if paths:
+            self._add_paths(paths)
+        return "copy"
 
     def _apply_language(self) -> None:
         self.root.title(self._t("title"))
         for key, widget in self.text_widgets.items():
-            if key in {"input_section", "output_section", "progress_section", "log_section"}:
-                widget.configure(text=self._t(key))
-            elif key != "report":
+            if key != "report":
                 widget.configure(text=self._t(key))
         for key, widget in self.button_widgets.items():
             if key in {"browse_output", "browse_report"}:
@@ -829,7 +926,7 @@ class Jnotes2HinoteApp:
                 source_counts=counts,
             )
             self.event_queue.put(("scan_complete", (files, errors, counts)))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - worker boundary must report every failure to the GUI
             self.event_queue.put(("fatal", exc))
 
     def _begin_conversion(self) -> None:
@@ -863,7 +960,7 @@ class Jnotes2HinoteApp:
                 except OSError as exc:
                     report_error = str(exc)
             self.event_queue.put(("done", (summary, report_error)))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - worker boundary must report every failure to the GUI
             self.event_queue.put(("fatal", exc))
 
     def _poll_queue(self) -> None:
@@ -1104,7 +1201,7 @@ class Jnotes2HinoteApp:
 
 
 def main() -> None:
-    root = tk.Tk()
+    root = create_root()
     app = Jnotes2HinoteApp(root)
     root.option_add("*tearoff", False)
     menu = tk.Menu(root)
