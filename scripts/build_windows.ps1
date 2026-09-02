@@ -73,5 +73,8 @@ foreach ($tkBinary in @("tcl86t.dll", "tk86t.dll")) {
 }
 $pyInstallerArgs += "scripts\gui_entry.py"
 & $buildPython -m PyInstaller @pyInstallerArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "PyInstaller failed with exit code $LASTEXITCODE"
+}
 
 Write-Output "Built dist\Jnotes2Hinote\Jnotes2Hinote.exe"
