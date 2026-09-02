@@ -24,9 +24,13 @@ The input area accepts three source types:
 - **Folders**: direct children are scanned by default;
 - **TXT lists**: one file or folder path per line.
 
+You can also drop one or more files, folders or TXT lists directly onto the input list. Drops use the same type checks, duplicate handling and warnings as the Add buttons; new inputs are rejected while a conversion is running.
+
 Blank lines and lines beginning with `#` are ignored. Relative paths in a TXT list are resolved relative to the list file. Sources can be mixed, and the same file is converted only once.
 
 Enable **Include files in subdirectories** to recursively scan folders found directly in the input list or in a TXT list.
+
+The GUI uses two columns. Inputs and output settings are on the left; conversion results and the run log are on the right. Both the main splitter and the result/log splitter can be dragged to adjust the available space.
 
 ## Output settings
 

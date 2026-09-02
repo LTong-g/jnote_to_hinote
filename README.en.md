@@ -4,7 +4,7 @@ Convert Jnotes notebooks (`.Jnotes` / `.jnote`) into Huawei Notes `.hinote` file
 
 The currently device-tested version combination is **Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295**. Other versions have not been verified and may produce different results.
 
-Current version: **v1.4.0**. The project provides a desktop GUI as well as command-line batch conversion.
+Current version: **v1.5.0**. The project provides a desktop GUI as well as command-line batch conversion.
 
 Chinese version: [README.md](README.md)
 
@@ -46,9 +46,11 @@ python -m jnotes2hinote.gui
 
 ### Basic workflow
 
-1. Click “Add files”, “Add folder” or “Add TXT list”.
+1. Click “Add files”, “Add folder” or “Add TXT list”, or drop those inputs onto the input list.
 2. Enable recursive scanning if files in all subfolders should be included.
 3. Choose an output folder, select how to handle duplicate names, and start the conversion.
+
+The GUI uses a two-column layout: inputs and output settings are on the left, while conversion results and the run log are on the right. Drag the splitters to adjust the available space.
 
 The GUI recognizes `.Jnotes` and `.jnote` files. A TXT list contains one file or folder path per line; blank lines and lines beginning with `#` are ignored. If a path cannot be read or a file fails to convert, the error is recorded and the remaining paths continue to be processed.
 

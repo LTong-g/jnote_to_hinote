@@ -6,7 +6,7 @@ from .converter_v1_2_0 import (
 )
 from .converter_v1_2_0 import __version__ as CONVERTER_CORE_VERSION
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 __all__ = [
     "__version__",

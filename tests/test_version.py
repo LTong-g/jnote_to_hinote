@@ -3,7 +3,7 @@ from jnotes2hinote.converter_v1_2_0 import __version__ as converter_core_version
 
 
 def test_version_metadata():
-    assert __version__ == "1.4.0"
+    assert __version__ == "1.5.0"
     assert CONVERTER_CORE_VERSION == "1.2.0"
     assert converter_core_version == "1.2.0"
     assert TESTED_JNOTES_VERSION == "3.2.3.2"
