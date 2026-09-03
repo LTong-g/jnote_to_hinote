@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jnotes2hinote"
-version = "1.5.1"
+version = "1.5.2"
 description = "将经过设备验证的 Jideos 云记（.Jnotes）转换为华为笔记（.hinote），并保留原生可编辑笔迹"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,6 +29,7 @@ classifiers = [
 dependencies = [
   "Pillow>=10.0",
   "PyPDF2>=2.10",
+  "pypdfium2>=5.13.0,<6",
   "tkinterdnd2>=0.4.2"
 ]
 

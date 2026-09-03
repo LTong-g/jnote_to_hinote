@@ -6,11 +6,11 @@ import struct
 import zipfile
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw, JpegImagePlugin
 from PyPDF2 import PdfWriter
 
 from jnotes2hinote.converter_v1_2_0 import convert
-from jnotes2hinote.converter_v1_5_1 import convert as convert_current
+from jnotes2hinote.converter_v1_5_2 import convert as convert_current
 
 
 def java_utf(value: str) -> bytes:
@@ -49,7 +49,20 @@ def make_cover() -> bytes:
     return output.getvalue()
 
 
-def make_fixture(tmp_path: Path) -> tuple[Path, bytes]:
+def make_visible_pdf() -> bytes:
+    pages = []
+    for color, label in (("#205493", "FIRST"), ("#c84242", "SECOND")):
+        page = Image.new("RGB", (595, 842), color)
+        draw = ImageDraw.Draw(page)
+        draw.rectangle((40, 40, 555, 802), outline="white", width=16)
+        draw.text((80, 100), label, fill="white", stroke_width=2, stroke_fill="black")
+        pages.append(page)
+    output = io.BytesIO()
+    pages[0].save(output, "PDF", save_all=True, append_images=pages[1:], resolution=72)
+    return output.getvalue()
+
+
+def make_fixture(tmp_path: Path, pdf: bytes | None = None) -> tuple[Path, bytes]:
     note_id = "note-id"
     pdf_name = "import note.pdf"
     first_page = "page-1"
@@ -86,7 +99,7 @@ def make_fixture(tmp_path: Path) -> tuple[Path, bytes]:
             ],
         },
     }]).encode()
-    pdf = make_pdf()
+    pdf = pdf if pdf is not None else make_pdf()
     jzip = b"".join([
         java_utf("TRY"),
         struct.pack(">i", 2),
@@ -176,8 +189,96 @@ def test_current_core_preserves_pdf_for_zip_jnotes_variant(tmp_path: Path):
     output = tmp_path / "variant.hinote"
     result = convert_current(variant, output)
 
-    assert result["converterVersion"] == "1.5.1"
+    assert result["converterVersion"] == "1.5.2"
     assert result["sourceContainer"]["entry"] == "zip.Jnotes"
     assert result["pdfStats"]["sourcePdfSha256"]["import note.pdf"] == hashlib.sha256(pdf).hexdigest()
     with zipfile.ZipFile(output) as archive:
         assert any(archive.read(name) == pdf for name in archive.namelist() if name.startswith("files/"))
+
+
+def test_current_core_generates_native_quality_thumbnail_for_every_pdf_page(tmp_path: Path):
+    source, _ = make_fixture(tmp_path, pdf=make_visible_pdf())
+    output = tmp_path / "visible.hinote"
+    result = convert_current(source, output)
+
+    assert result["thumbnailStats"] == {
+        "generated": 2,
+        "pdfRendered": 2,
+        "regularRendered": 0,
+        "height": 1080,
+        "jpegQuality": 100,
+    }
+    with zipfile.ZipFile(output) as archive:
+        pages = []
+        for name in archive.namelist():
+            if name.startswith("pages/"):
+                pages.append(json.loads(gzip.decompress(archive.read(name))))
+        pages.sort(key=lambda page: page["customNotePageContent"]["pageNumber"])
+        assert len(pages) == 2
+        images = []
+        for page in pages:
+            content = page["customNotePageContent"]
+            filename = content["thumbnail"].rsplit("/", 1)[-1]
+            assert filename
+            assert "files/" + filename in archive.namelist()
+            assert any(item["name"] == filename for item in page["fileList"])
+            detail = json.loads(content["data1"])["detailFileMap"]
+            assert filename in json.loads(detail)
+            image = Image.open(io.BytesIO(archive.read("files/" + filename)))
+            image.load()
+            assert image.format == "JPEG"
+            assert image.size == (round(content["pageRatio"] * 1080), 1080)
+            assert JpegImagePlugin.get_sampling(image) == 2
+            assert {value for table in image.quantization.values() for value in table} == {1}
+            images.append(image.convert("RGB"))
+        assert images[0].getpixel((20, 20)) != images[1].getpixel((20, 20))
+
+
+def test_current_core_generates_thumbnails_for_mixed_pdf_and_regular_pages(tmp_path: Path):
+    note_id = "mixed-note"
+    pdf_name = "mixed.pdf"
+    page_1, blank_page, page_3 = "pdf-1", "blank", "pdf-2"
+    note = json.dumps({"b": "Mixed", "j": 1240.0, "l": 1754.0}).encode()
+    pages = [
+        {"a": page_1, "c": 0, "d": "", "e": "/data/.data/" + pdf_name, "k": 1240.0, "l": 1754.0},
+        {"a": blank_page, "d": "PageBg/White_Blank_Paper", "k": 1240.0, "l": 1754.0},
+        {"a": page_3, "c": 1, "d": "", "e": "/data/.data/" + pdf_name, "k": 1240.0, "l": 1754.0},
+    ]
+    stroke = json.dumps([{
+        "b": 1,
+        "e": 1,
+        "c": {"a": 2, "c": -16777216, "d": 3, "k": [{"x": 10, "y": 20}, {"x": 80, "y": 120}]},
+    }]).encode()
+    stream = b"".join([
+        java_utf("TRY"),
+        struct.pack(">i", 2),
+        java_utf(note_id),
+        record("NOTE", note_id, "", note),
+        record("PDF", pdf_name, "", make_visible_pdf()),
+        *(record("PAGE", page["a"], note_id, json.dumps(page).encode()) for page in pages),
+        record("STROKE", "blank-stroke", blank_page, stroke),
+        struct.pack(">i", 0),
+        b"Lucky",
+    ])
+    source = tmp_path / "mixed.Jnotes"
+    with zipfile.ZipFile(source, "w") as archive:
+        archive.writestr("zip.Jzip", stream)
+    output = tmp_path / "mixed.hinote"
+
+    result = convert_current(source, output)
+
+    assert result["thumbnailStats"]["generated"] == 3
+    assert result["thumbnailStats"]["pdfRendered"] == 2
+    assert result["thumbnailStats"]["regularRendered"] == 1
+    with zipfile.ZipFile(output) as archive:
+        pages_out = []
+        for name in archive.namelist():
+            if name.startswith("pages/"):
+                pages_out.append(json.loads(gzip.decompress(archive.read(name)))["customNotePageContent"])
+        pages_out.sort(key=lambda page: page["pageNumber"])
+        assert [page["bkgAttachmentIndex"] for page in pages_out] == [0, 0, 1]
+        assert pages_out[0]["bkgAttachmentId"]
+        assert pages_out[1]["bkgAttachmentId"] == ""
+        assert pages_out[2]["bkgAttachmentId"] == pages_out[0]["bkgAttachmentId"]
+        assert [page["cloudSyncState"] for page in pages_out] == [0, 0, 0]
+        assert all(page["thumbnail"] for page in pages_out)
