@@ -6,7 +6,7 @@ import collections
 import json
 from pathlib import Path
 
-from jnotes2hinote.converter_v1_2_0 import parse_jnotes
+from jnotes2hinote.current_core import parse_jnotes_with_info
 
 
 def main() -> None:
@@ -14,7 +14,7 @@ def main() -> None:
     ap.add_argument("input", type=Path)
     args = ap.parse_args()
 
-    jn = parse_jnotes(args.input)
+    jn, container = parse_jnotes_with_info(args.input)
     pdf_records = [record for record in jn.records if record.typ == "PDF"]
     pdf_names = {
         str(record.object_id).replace("\\", "/").rsplit("/", 1)[-1].casefold()
@@ -44,6 +44,10 @@ def main() -> None:
 
     print(json.dumps({
         "标题": jn.title,
+        "数据入口": container.entry_name,
+        "内层版本": container.stream_version,
+        "内层字节数": container.stream_size,
+        "尾部已识别": container.footer_recognized,
         "页数": len(jn.pages),
         "记录数": len(jn.records),
         "笔迹对象数": total,

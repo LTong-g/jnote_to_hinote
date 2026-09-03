@@ -4,6 +4,6 @@ message: "如果本逆向工程成果对你的研究或工具开发有帮助，�
 type: software
 authors:
   - name: Ray L
-version: 1.3.0
-date-released: 2026-08-26
+version: 1.5.1
+date-released: 2026-09-02
 license: MIT

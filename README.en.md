@@ -4,7 +4,7 @@ Convert Jnotes notebooks (`.Jnotes` / `.jnote`) into Huawei Notes `.hinote` file
 
 The currently device-tested version combination is **Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295**. Other versions have not been verified and may produce different results.
 
-Current version: **v1.5.0**. The project provides a desktop GUI as well as command-line batch conversion.
+Current version: **v1.5.1**. The project provides a desktop GUI as well as command-line batch conversion.
 
 Chinese version: [README.md](README.md)
 
@@ -53,6 +53,8 @@ python -m jnotes2hinote.gui
 The GUI uses a two-column layout: inputs and output settings are on the left, while conversion results and the run log are on the right. Drag the splitters to adjust the available space.
 
 The GUI recognizes `.Jnotes` and `.jnote` files. A TXT list contains one file or folder path per line; blank lines and lines beginning with `#` are ignored. If a path cannot be read or a file fails to convert, the error is recorded and the remaining paths continue to be processed.
+
+The converter supports the two Jnotes container variants used by the tested exports. They differ only in the name of the data member inside the ZIP archive.
 
 See the [GUI guide](docs/gui.en.md) for complete instructions.
 
@@ -158,6 +160,7 @@ This is an unofficial interoperability tool based on reverse engineering, not an
 - [v1.1.1 fix validation summary](docs/validation-v1.1.1.md)
 - [v1.1.2 fix validation summary](docs/validation-v1.1.2.md)
 - [v1.2.0 PDF conversion validation summary](docs/validation-v1.2.0.md)
+- [v1.5.1 container compatibility validation summary](docs/validation-v1.5.1.md)
 
 ## Development
 

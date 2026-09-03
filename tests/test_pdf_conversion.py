@@ -10,6 +10,7 @@ from PIL import Image
 from PyPDF2 import PdfWriter
 
 from jnotes2hinote.converter_v1_2_0 import convert
+from jnotes2hinote.converter_v1_5_1 import convert as convert_current
 
 
 def java_utf(value: str) -> bytes:
@@ -164,3 +165,19 @@ def test_pdf_page_index_errors_before_output(tmp_path: Path):
     else:
         raise AssertionError("越界 PDF 页码没有失败")
     assert not output.exists()
+
+
+def test_current_core_preserves_pdf_for_zip_jnotes_variant(tmp_path: Path):
+    source, pdf = make_fixture(tmp_path)
+    variant = tmp_path / "variant.Jnotes"
+    with zipfile.ZipFile(source) as source_zip, zipfile.ZipFile(variant, "w") as archive:
+        archive.writestr("zip.Jnotes", source_zip.read("zip.Jzip"))
+
+    output = tmp_path / "variant.hinote"
+    result = convert_current(variant, output)
+
+    assert result["converterVersion"] == "1.5.1"
+    assert result["sourceContainer"]["entry"] == "zip.Jnotes"
+    assert result["pdfStats"]["sourcePdfSha256"]["import note.pdf"] == hashlib.sha256(pdf).hexdigest()
+    with zipfile.ZipFile(output) as archive:
+        assert any(archive.read(name) == pdf for name in archive.namelist() if name.startswith("files/"))
