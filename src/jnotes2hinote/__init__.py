@@ -6,7 +6,7 @@ from .current_core import (
     parse_jnotes,
 )
 
-__version__ = "1.5.2"
+__version__ = "1.5.3"
 
 __all__ = [
     "CONVERTER_CORE_VERSION",

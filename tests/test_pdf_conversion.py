@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, JpegImagePlugin
 from PyPDF2 import PdfWriter
 
 from jnotes2hinote.converter_v1_2_0 import convert
-from jnotes2hinote.converter_v1_5_2 import convert as convert_current
+from jnotes2hinote.converter_v1_5_3 import convert as convert_current
 
 
 def java_utf(value: str) -> bytes:
@@ -189,7 +189,7 @@ def test_current_core_preserves_pdf_for_zip_jnotes_variant(tmp_path: Path):
     output = tmp_path / "variant.hinote"
     result = convert_current(variant, output)
 
-    assert result["converterVersion"] == "1.5.2"
+    assert result["converterVersion"] == "1.5.3"
     assert result["sourceContainer"]["entry"] == "zip.Jnotes"
     assert result["pdfStats"]["sourcePdfSha256"]["import note.pdf"] == hashlib.sha256(pdf).hexdigest()
     with zipfile.ZipFile(output) as archive:
@@ -205,12 +205,13 @@ def test_current_core_generates_native_quality_thumbnail_for_every_pdf_page(tmp_
         "generated": 2,
         "pdfRendered": 2,
         "regularRendered": 0,
-        "height": 1080,
+        "maxEdge": 1080,
         "jpegQuality": 100,
     }
     with zipfile.ZipFile(output) as archive:
+        archive_names = archive.namelist()
         pages = []
-        for name in archive.namelist():
+        for name in archive_names:
             if name.startswith("pages/"):
                 pages.append(json.loads(gzip.decompress(archive.read(name))))
         pages.sort(key=lambda page: page["customNotePageContent"]["pageNumber"])
@@ -227,11 +228,29 @@ def test_current_core_generates_native_quality_thumbnail_for_every_pdf_page(tmp_
             image = Image.open(io.BytesIO(archive.read("files/" + filename)))
             image.load()
             assert image.format == "JPEG"
-            assert image.size == (round(content["pageRatio"] * 1080), 1080)
+            ratio = content["pageRatio"]
+            expected = (round(ratio * 1080), 1080) if ratio <= 1 else (1080, round(1080 / ratio))
+            assert image.size == expected
+            assert max(image.size) == 1080
             assert JpegImagePlugin.get_sampling(image) == 2
             assert {value for table in image.quantization.values() for value in table} == {1}
             images.append(image.convert("RGB"))
         assert images[0].getpixel((20, 20)) != images[1].getpixel((20, 20))
+
+        top_name = next(
+            name
+            for name in archive_names
+            if "/" not in name and name.endswith(".jhinote") and name != "custom_md.jhinote"
+        )
+        top = json.loads(gzip.decompress(archive.read(top_name)))
+        physical_files = [name.rsplit("/", 1)[-1] for name in archive_names if name.startswith("files/")]
+        assert physical_files[:2] == [item["name"] for item in top["fileList"]]
+
+        custom_md = json.loads(gzip.decompress(archive.read("custom_md.jhinote")))
+        assert [item["fileNameMdStr"] for item in custom_md["customMdContents"]] == [
+            hashlib.sha256(name.encode("utf-8")).hexdigest()
+            for name in physical_files
+        ]
 
 
 def test_current_core_generates_thumbnails_for_mixed_pdf_and_regular_pages(tmp_path: Path):

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from jnotes2hinote.converter_v1_5_2 import convert, parse_jnotes_with_info
+from jnotes2hinote.current_core import convert, parse_jnotes_with_info
 
 
 def java_utf(value: str) -> bytes:
@@ -74,7 +74,7 @@ def test_current_core_converts_both_container_names(tmp_path: Path, entry_name: 
     result = convert(source, output)
 
     assert output.is_file()
-    assert result["converterVersion"] == "1.5.2"
+    assert result["converterVersion"] == "1.5.3"
     assert result["sourceContainer"]["entry"] == entry_name
     assert result["pages"] == 1
 

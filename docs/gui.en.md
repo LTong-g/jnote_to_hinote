@@ -69,4 +69,4 @@ Install the optional build dependency and run:
 ./scripts/build_windows.ps1
 ```
 
-The script produces a no-console Windows application directory. Run `dist/Jnotes2Hinote/Jnotes2Hinote.exe` and keep the runtime files in the `dist/Jnotes2Hinote` directory. The packaged application uses the current v1.5.1 conversion core.
+The script produces a no-console Windows application directory. Run `dist/Jnotes2Hinote/Jnotes2Hinote.exe` and keep the runtime files in the `dist/Jnotes2Hinote` directory. The packaged application uses the current v1.5.3 conversion core.
