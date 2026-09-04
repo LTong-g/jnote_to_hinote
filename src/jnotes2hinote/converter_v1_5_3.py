@@ -42,6 +42,15 @@ def parse_jnotes(path: Path) -> JNote:
     return parse_jnotes_with_info(path)[0]
 
 
+def _hinote_page_geometry(page_width: float, page_height: float) -> tuple[float, int]:
+    """Return native Hinote ratio/orientation metadata for physical dimensions."""
+    if page_width <= 0 or page_height <= 0:
+        raise ValueError("Hinote 页面尺寸必须为正数")
+    if page_width > page_height:
+        return page_height / page_width, 1
+    return page_width / page_height, 0
+
+
 def _archive_entry_order(
     entries: dict[str, bytes],
 ) -> tuple[list[str], list[str], list[str]]:
@@ -110,6 +119,9 @@ def _rewrite_thumbnails(
             content = page_object["customNotePageContent"]
             source_page_id = str(source_page.get("a", ""))
             page_width, page_height, _ = _base._pdf_base._page_geometry(jn, source_page)
+            page_ratio, page_orientation = _hinote_page_geometry(page_width, page_height)
+            content["pageRatio"] = page_ratio
+            content["pageOrientation"] = page_orientation
             strokes = list(jn.strokes.get(source_page_id, []))
             strokes.sort(key=lambda record: (int(record.get("b", 0)), int(record.get("e", 0))))
             binding = bindings.get(source_page_id)
@@ -150,6 +162,18 @@ def _rewrite_thumbnails(
                 content["cloudSyncState"] = 0
             entries[f"files/{new_name}"] = thumbnail
             entries[entry_name] = gzip_json(page_object)
+
+    first_content = page_entries[0][1]["customNotePageContent"]
+    for top_name in (
+        name
+        for name in entries
+        if "/" not in name and name.endswith(".jhinote") and name != "custom_md.jhinote"
+    ):
+        top_object = json.loads(gzip.decompress(entries[top_name]))
+        top_content = top_object["customNoteContent"]
+        top_content["pageRatio"] = first_content["pageRatio"]
+        top_content["pageOrientation"] = first_content["pageOrientation"]
+        entries[top_name] = gzip_json(top_object)
 
     page_names, file_names, top_names = _archive_entry_order(entries)
     all_file_bytes = [(PurePosixPath(name).name, entries[name]) for name in file_names]
@@ -193,7 +217,15 @@ def _validate_thumbnails(archive_path: Path) -> None:
             data = archive.read(f"files/{name}")
             image = Image.open(io.BytesIO(data))
             image.load()
-            expected_size = thumbnail_dimensions(float(content["pageRatio"]), 1.0)
+            page_ratio = float(content["pageRatio"])
+            page_orientation = int(content["pageOrientation"])
+            if not 0 < page_ratio <= 1 or page_orientation not in (0, 1):
+                raise ValueError(f"Hinote 页面方向元数据不正确：{entry_name}")
+            expected_size = (
+                thumbnail_dimensions(1.0, page_ratio)
+                if page_orientation == 1
+                else thumbnail_dimensions(page_ratio, 1.0)
+            )
             if image.format != "JPEG" or image.size != expected_size or max(image.size) != THUMBNAIL_MAX_EDGE:
                 raise ValueError(f"Hinote 缩略图规格不正确：{name}")
             if JpegImagePlugin.get_sampling(image) != THUMBNAIL_JPEG_SUBSAMPLING:
@@ -239,6 +271,14 @@ def convert(jnotes_path: Path, output: Path, page_limit: int | None = None) -> d
     result["converterVersion"] = __version__
     result["output"] = str(output)
     result["outputBytes"] = output.stat().st_size
+    first_width, first_height, _ = _base._pdf_base._page_geometry(jn, pages_src[0])
+    result["pageRatio"], result["pageOrientation"] = _hinote_page_geometry(first_width, first_height)
+    for source_page, page_stats in zip(pages_src, result.get("pageStats", [])):
+        page_width, page_height, _ = _base._pdf_base._page_geometry(jn, source_page)
+        page_stats["pageRatio"], page_stats["pageOrientation"] = _hinote_page_geometry(
+            page_width,
+            page_height,
+        )
     result["thumbnailStats"] = {
         **thumbnail_stats,
         "maxEdge": THUMBNAIL_MAX_EDGE,

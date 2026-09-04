@@ -62,20 +62,28 @@ def make_visible_pdf() -> bytes:
     return output.getvalue()
 
 
-def make_fixture(tmp_path: Path, pdf: bytes | None = None) -> tuple[Path, bytes]:
+def make_fixture(
+    tmp_path: Path,
+    pdf: bytes | None = None,
+    *,
+    landscape: bool = False,
+) -> tuple[Path, bytes]:
     note_id = "note-id"
     pdf_name = "import note.pdf"
     first_page = "page-1"
     second_page = "page-2"
-    note = json.dumps({"b": "PDF Fixture", "j": 1240.0, "l": 1754.0}).encode()
+    note_width, note_height = (1754.0, 1240.0) if landscape else (1240.0, 1754.0)
+    first_width, first_height = (1754.0, 1240.0) if landscape else (1240.25, 1754.0)
+    second_width, second_height = (1600.0, 1200.0) if landscape else (1720.3125, 1753.9584)
+    note = json.dumps({"b": "PDF Fixture", "j": note_width, "l": note_height}).encode()
     page_1 = json.dumps({
         "a": first_page,
         "c": 0,
         "d": "",
         "e": "/data/.data/" + pdf_name,
         "i": True,
-        "k": 1240.25,
-        "l": 1754.0,
+        "k": first_width,
+        "l": first_height,
     }).encode()
     page_2 = json.dumps({
         "a": second_page,
@@ -83,8 +91,8 @@ def make_fixture(tmp_path: Path, pdf: bytes | None = None) -> tuple[Path, bytes]
         "d": "",
         "e": "/data/.data/" + pdf_name,
         "i": False,
-        "k": 1720.3125,
-        "l": 1753.9584,
+        "k": second_width,
+        "l": second_height,
     }).encode()
     stroke = json.dumps([{
         "b": 1,
@@ -229,7 +237,11 @@ def test_current_core_generates_native_quality_thumbnail_for_every_pdf_page(tmp_
             image.load()
             assert image.format == "JPEG"
             ratio = content["pageRatio"]
-            expected = (round(ratio * 1080), 1080) if ratio <= 1 else (1080, round(1080 / ratio))
+            expected = (
+                (1080, round(ratio * 1080))
+                if content["pageOrientation"] == 1
+                else (round(ratio * 1080), 1080)
+            )
             assert image.size == expected
             assert max(image.size) == 1080
             assert JpegImagePlugin.get_sampling(image) == 2
@@ -251,6 +263,43 @@ def test_current_core_generates_native_quality_thumbnail_for_every_pdf_page(tmp_
             hashlib.sha256(name.encode("utf-8")).hexdigest()
             for name in physical_files
         ]
+
+
+def test_current_core_uses_native_metadata_for_landscape_pages(tmp_path: Path):
+    source, _ = make_fixture(tmp_path, pdf=make_visible_pdf(), landscape=True)
+    output = tmp_path / "landscape.hinote"
+
+    result = convert_current(source, output)
+
+    assert result["pageRatio"] == 1240 / 1754
+    assert result["pageOrientation"] == 1
+    with zipfile.ZipFile(output) as archive:
+        names = archive.namelist()
+        top_name = next(
+            name
+            for name in names
+            if "/" not in name and name.endswith(".jhinote") and name != "custom_md.jhinote"
+        )
+        top = json.loads(gzip.decompress(archive.read(top_name)))["customNoteContent"]
+        assert top["pageRatio"] == 1240 / 1754
+        assert top["pageOrientation"] == 1
+
+        pages = [
+            json.loads(gzip.decompress(archive.read(name)))
+            for name in names
+            if name.startswith("pages/")
+        ]
+        pages.sort(key=lambda page: page["customNotePageContent"]["pageNumber"])
+        assert [page["customNotePageContent"]["pageRatio"] for page in pages] == [
+            1240 / 1754,
+            1200 / 1600,
+        ]
+        assert all(page["customNotePageContent"]["pageOrientation"] == 1 for page in pages)
+        for page in pages:
+            content = page["customNotePageContent"]
+            filename = content["thumbnail"].rsplit("/", 1)[-1]
+            image = Image.open(io.BytesIO(archive.read("files/" + filename)))
+            assert image.size == (1080, round(content["pageRatio"] * 1080))
 
 
 def test_current_core_generates_thumbnails_for_mixed_pdf_and_regular_pages(tmp_path: Path):

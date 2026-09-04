@@ -6,7 +6,7 @@ The currently device-tested version combination is **Jnotes 3.2.3.2 → Huawei N
 
 Current version: **v1.5.3**. The project provides a desktop GUI as well as command-line batch conversion.
 
-v1.5.3 generates a JPEG-quality-100 thumbnail with a 1080-pixel longest edge for every regular and PDF-backed page, with PDF previews compositing the original PDF page and editable overlays.
+v1.5.3 generates a JPEG-quality-100 thumbnail with a 1080-pixel longest edge for every regular and PDF-backed page, composites PDF previews with editable overlays, and encodes landscape pages with native `pageRatio < 1` / `pageOrientation = 1` metadata.
 
 Chinese version: [README.md](README.md)
 
