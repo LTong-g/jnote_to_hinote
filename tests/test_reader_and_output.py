@@ -75,7 +75,7 @@ def test_converter_converts_both_container_names(tmp_path: Path, entry_name: str
     result = convert(source, output)
 
     assert output.is_file()
-    assert result["version"] == "1.6.0"
+    assert result["version"] == "1.7.0"
     assert "converterVersion" not in result
     assert result["sourceContainer"]["entry"] == entry_name
     assert result["pages"] == 1

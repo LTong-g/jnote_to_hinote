@@ -4,9 +4,9 @@ Convert Jnotes notebooks (`.Jnotes` / `.jnote`) into Huawei Notes `.hinote` file
 
 The currently device-tested version combination is **Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295**. Other versions have not been verified and may produce different results.
 
-Current version: **v1.6.0**. The project provides a desktop GUI as well as command-line batch conversion.
+Current version: **v1.7.0**. The project provides a desktop GUI as well as command-line batch conversion.
 
-v1.6.0 preserves v1.5.3's high-quality thumbnails and landscape-page format, while ensuring file outputs end in `.hinote` and improving batch statistics, exit codes and report privacy.
+v1.7.0 preserves v1.6.0 conversion behavior, simplifies the historical conversion architecture and version metadata, and provides a smaller Windows package with a full packaged-runtime self-test.
 
 Chinese version: [README.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/README.md)
 
