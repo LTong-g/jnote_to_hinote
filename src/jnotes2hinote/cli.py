@@ -13,7 +13,7 @@ from .batch import (
     convert_batch,
     plan_output_paths,
 )
-from .current_core import convert
+from .converter import convert
 from .reporting import redact_report
 
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from threading import Event
 from typing import Any
 
-from .current_core import convert
+from .converter import convert
 
 JNOTES_SUFFIXES = {".jnotes", ".jnote"}
 CONFLICT_RENAME = "rename"

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from jnotes2hinote.converter_v1_6_0 import ensure_hinote_suffix
-from jnotes2hinote.current_core import convert, parse_jnotes_with_info
+from jnotes2hinote.converter import convert, ensure_hinote_suffix
+from jnotes2hinote.reader import parse_jnotes_with_info
 
 
 def java_utf(value: str) -> bytes:
@@ -67,7 +67,7 @@ def test_reader_supports_both_known_container_names(tmp_path: Path, entry_name: 
 
 
 @pytest.mark.parametrize("entry_name", ["zip.Jzip", "zip.Jnotes"])
-def test_current_core_converts_both_container_names(tmp_path: Path, entry_name: str):
+def test_converter_converts_both_container_names(tmp_path: Path, entry_name: str):
     source = tmp_path / f"source-{entry_name}.Jnotes"
     output = tmp_path / f"output-{entry_name}.hinote"
     write_container(source, [entry_name])
@@ -133,7 +133,7 @@ def test_hinote_suffix_is_appended_only_when_needed(name: str, expected: str):
     assert ensure_hinote_suffix(Path(name)) == Path(expected)
 
 
-def test_current_core_appends_hinote_suffix_to_file_output(tmp_path: Path):
+def test_converter_appends_hinote_suffix_to_file_output(tmp_path: Path):
     source = tmp_path / "source.Jnotes"
     requested = tmp_path / "result.txt"
     write_container(source, ["zip.Jnotes"])
@@ -146,7 +146,7 @@ def test_current_core_appends_hinote_suffix_to_file_output(tmp_path: Path):
     assert result["output"] == str(actual)
 
 
-def test_current_core_never_replaces_same_named_source(tmp_path: Path):
+def test_converter_never_replaces_same_named_source(tmp_path: Path):
     source = tmp_path / "source.Jnotes"
     write_container(source, ["zip.Jnotes"])
     original = source.read_bytes()
@@ -155,3 +155,4 @@ def test_current_core_never_replaces_same_named_source(tmp_path: Path):
 
     assert source.read_bytes() == original
     assert result["output"] == str(tmp_path / "source.Jnotes.hinote")
+

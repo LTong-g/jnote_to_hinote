@@ -1,21 +1,44 @@
 #!/usr/bin/env python3
-"""Jnotes v1.5.1 input reader.
-
-The outer ZIP member is named ``zip.Jzip`` in some exports and ``zip.Jnotes``
-in others.  Both names contain the same TRY v2 sequential stream; the member
-name is therefore treated as a container variant, not as a protocol version.
-"""
+"""Read supported Jnotes containers into the converter's in-memory model."""
 from __future__ import annotations
 
 import json
 import struct
 import zipfile
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .converter_v1_1_1 import JNote, JRecord
+
+@dataclass
+class JRecord:
+    typ: str
+    source: str
+    object_id: str
+    parent_id: str
+    aux_path: str
+    aux_size: str
+    payload: bytes
+    binary: bytes = b""
+
+
+@dataclass
+class JNote:
+    note_uuid: str
+    title: str
+    width: float
+    height: float
+    note_meta: dict[str, Any]
+    pages: list[dict[str, Any]]
+    records: list[JRecord]
+    strokes: dict[str, list[dict[str, Any]]] = field(default_factory=lambda: defaultdict(list))
+    images: dict[str, list[tuple[dict[str, Any], bytes]]] = field(default_factory=lambda: defaultdict(list))
+    texts: dict[str, list[dict[str, Any]]] = field(default_factory=lambda: defaultdict(list))
+    covers: dict[str, bytes] = field(default_factory=dict)
+    audio_records: list[JRecord] = field(default_factory=list)
+
+
 
 SUPPORTED_ENTRY_NAMES = ("zip.Jzip", "zip.Jnotes")
 SUPPORTED_STREAM_VERSION = 2
@@ -214,7 +237,10 @@ def parse_jnotes(path: Path) -> JNote:
 __all__ = [
     "SUPPORTED_ENTRY_NAMES",
     "SUPPORTED_STREAM_VERSION",
+    "JNote",
+    "JRecord",
     "JnotesContainerInfo",
     "parse_jnotes",
     "parse_jnotes_with_info",
 ]
+

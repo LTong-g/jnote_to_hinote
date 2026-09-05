@@ -2,8 +2,8 @@ import io
 
 from PIL import Image, JpegImagePlugin
 
-from jnotes2hinote.thumbnail_renderer_v1_5_2 import (
-    THUMBNAIL_HEIGHT,
+from jnotes2hinote.thumbnail import (
+    THUMBNAIL_MAX_EDGE,
     render_regular_thumbnail,
     thumbnail_dimensions,
 )
@@ -34,7 +34,8 @@ def test_regular_thumbnail_uses_native_resolution_and_jpeg_quality():
     image = Image.open(io.BytesIO(thumbnail))
     image.load()
     assert image.format == "JPEG"
-    assert image.size == (round(1240 / 1754 * THUMBNAIL_HEIGHT), THUMBNAIL_HEIGHT)
+    assert image.size == (round(1240 / 1754 * THUMBNAIL_MAX_EDGE), THUMBNAIL_MAX_EDGE)
     assert JpegImagePlugin.get_sampling(image) == 2
     assert {value for table in image.quantization.values() for value in table} == {1}
     assert image.convert("L").getextrema()[0] < 240
+

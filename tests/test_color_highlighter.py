@@ -1,6 +1,6 @@
 import struct
 
-from jnotes2hinote.converter_v1_1_2 import _source_alpha, _write_huawei_bgr, f32be
+from jnotes2hinote.converter import _source_alpha, _write_huawei_bgr, f32be
 
 
 def test_huawei_bgr_layout():

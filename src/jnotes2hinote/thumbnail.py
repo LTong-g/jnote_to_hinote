@@ -1,30 +1,94 @@
-"""Native-quality Hinote thumbnail rendering for converter v1.5.2.
+"""Render orientation-safe, native-quality Hinote page thumbnails.
 
-Huawei Notes samples use a fixed 1080-pixel thumbnail height, JPEG quality
-100, and 4:2:0 chroma subsampling.  Rendering at twice the final resolution
+Observed Huawei Notes thumbnails use a 1080-pixel longest edge, JPEG quality
+100, and 4:2:0 chroma subsampling. Rendering at twice the final resolution
 before a Lanczos downsample keeps thin handwritten strokes legible.
 """
 from __future__ import annotations
 
 import io
+import os
 from collections.abc import Mapping
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
-from .converter_v1_1_2 import _load_thumbnail_font
 
-THUMBNAIL_HEIGHT = 1080
+def _thumbnail_font_candidates() -> list[Path]:
+    """Return common system fonts with Chinese and Latin glyph coverage."""
+    font_names = (
+        "msyh.ttc",                 # Microsoft YaHei
+        "simhei.ttf",               # SimHei
+        "simsun.ttc",               # SimSun
+        "Deng.ttf",                 # DengXian
+        "NotoSansCJK-Regular.ttc",
+        "NotoSansSC-Regular.otf",
+        "SourceHanSansSC-Regular.otf",
+    )
+    font_dirs: list[Path] = []
+    if os.name == "nt":
+        windir = os.environ.get("WINDIR", r"C:\Windows")
+        font_dirs.append(Path(windir) / "Fonts")
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            font_dirs.append(Path(local_app_data) / "Microsoft" / "Windows" / "Fonts")
+    font_dirs.extend(
+        (
+            Path("/System/Library/Fonts"),
+            Path("/Library/Fonts"),
+            Path("/usr/share/fonts/opentype/noto"),
+            Path("/usr/share/fonts/truetype/noto"),
+            Path("/usr/share/fonts/truetype/wqy"),
+        )
+    )
+    return [font_dir / name for font_dir in font_dirs for name in font_names]
+
+
+@lru_cache(maxsize=8)
+def _load_thumbnail_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Load a local font for thumbnail text, with a safe Pillow fallback."""
+    for font_path in _thumbnail_font_candidates():
+        if not font_path.is_file():
+            continue
+        try:
+            return ImageFont.truetype(str(font_path), size=size)
+        except (OSError, ValueError):
+            continue
+    return ImageFont.load_default()
+
+
+def _draw_thumbnail_text(
+    draw: ImageDraw.ImageDraw,
+    xy: tuple[int, int],
+    text: str,
+    font: ImageFont.ImageFont,
+) -> None:
+    """Draw thumbnail text without letting an unavailable fallback font abort conversion."""
+    try:
+        draw.text(xy, text, fill=(0, 0, 0, 255), font=font)
+    except UnicodeEncodeError:
+        # The default Pillow bitmap font only supports Latin-1. This branch is
+        # a last-resort safeguard for machines without a CJK system font.
+        fallback_text = text.encode("ascii", errors="replace").decode("ascii")
+        draw.text(xy, fallback_text, fill=(0, 0, 0, 255), font=font)
+
+
+
+THUMBNAIL_MAX_EDGE = 1080
 THUMBNAIL_SUPERSAMPLE = 2
 THUMBNAIL_JPEG_QUALITY = 100
 THUMBNAIL_JPEG_SUBSAMPLING = 2
 
 
 def thumbnail_dimensions(page_width: float, page_height: float) -> tuple[int, int]:
-    """Return the native observed thumbnail dimensions for a page ratio."""
+    """Keep the longest thumbnail edge at the native 1080-pixel limit."""
     if page_width <= 0 or page_height <= 0:
         raise ValueError("缩略图页面尺寸必须为正数")
-    return max(1, round(page_width / page_height * THUMBNAIL_HEIGHT)), THUMBNAIL_HEIGHT
+    if page_width <= page_height:
+        return max(1, round(page_width / page_height * THUMBNAIL_MAX_EDGE)), THUMBNAIL_MAX_EDGE
+    return THUMBNAIL_MAX_EDGE, max(1, round(page_height / page_width * THUMBNAIL_MAX_EDGE))
 
 
 def _argb(value: Any, default: int = -16777216) -> tuple[int, int, int, int]:
@@ -220,8 +284,9 @@ class PdfThumbnailRenderer:
         document = self._document(asset_key, payload)
         try:
             page = document[page_index]
-            _, pdf_height = page.get_size()
-            bitmap = page.render(scale=work_height / pdf_height)
+            pdf_width, pdf_height = page.get_size()
+            scale = min(work_width / pdf_width, work_height / pdf_height)
+            bitmap = page.render(scale=scale)
             background = bitmap.to_pil().convert("RGBA")
         except Exception as exc:
             raise ValueError(f"无法渲染 PDF 缩略图第 {page_index + 1} 页：{exc}") from exc
@@ -247,3 +312,4 @@ class PdfThumbnailRenderer:
 
     def __exit__(self, exc_type: object, exc: object, traceback: object) -> None:
         self.close()
+

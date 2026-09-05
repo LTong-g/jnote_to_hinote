@@ -2,7 +2,7 @@ import io
 
 from PIL import Image, JpegImagePlugin
 
-from jnotes2hinote.thumbnail_renderer_v1_5_3 import (
+from jnotes2hinote.thumbnail import (
     THUMBNAIL_MAX_EDGE,
     render_regular_thumbnail,
     thumbnail_dimensions,
@@ -40,3 +40,4 @@ def test_regular_thumbnail_keeps_native_quality_with_longest_edge_limit():
     assert JpegImagePlugin.get_sampling(image) == 2
     assert {value for table in image.quantization.values() for value in table} == {1}
     assert image.convert("L").getextrema()[0] < 240
+

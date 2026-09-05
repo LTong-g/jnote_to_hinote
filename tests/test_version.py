@@ -1,5 +1,5 @@
 from jnotes2hinote import CONVERTER_CORE_VERSION, TESTED_HUAWEI_NOTES_VERSION, TESTED_JNOTES_VERSION, __version__
-from jnotes2hinote.converter_v1_6_0 import __version__ as converter_core_version
+from jnotes2hinote.converter import __version__ as converter_core_version
 
 
 def test_version_metadata():

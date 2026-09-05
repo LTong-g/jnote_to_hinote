@@ -155,19 +155,11 @@ This is an unofficial interoperability tool based on reverse engineering, not an
 
 - [GUI guide](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/gui.en.md)
 - [Limitations and compatibility](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/limitations.md)
-- [Compatibility record](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/compatibility.md)
+- [Validation status](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation.md)
 - [Jnotes file format](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-jnotes.md)
 - [Huawei Notes file format](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-hinote.md)
 - [Conversion mapping rules](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/mapping.md)
-- [v1.0.0 validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.0.0.md)
-- [v1.1.0 validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.0.md)
-- [v1.1.1 fix validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.1.md)
-- [v1.1.2 fix validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.2.md)
-- [v1.2.0 PDF conversion validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.2.0.md)
-- [v1.5.1 container compatibility validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.1.md)
-- [v1.5.2 thumbnail validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.2.md)
-- [v1.5.3 landscape thumbnail and archive validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.3.md)
-- [v1.6.0 safe output and batch-report validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.6.0.md)
+- [Reverse-engineering notes](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/reverse-engineering.md)
 
 ## Development
 
@@ -178,7 +170,11 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Before contributing format research or code, read [CONTRIBUTING.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/CONTRIBUTING.md).
+The runtime keeps one unversioned implementation in `reader.py`,
+`converter.py`, and `thumbnail.py`; Git commits and tags preserve historical
+versions.
+
+Before contributing format research or code, read the [contribution guide](https://github.com/LTong-g/jnote_to_hinote/blob/main/.github/CONTRIBUTING.md).
 
 ## License
 

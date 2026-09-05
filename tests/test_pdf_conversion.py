@@ -9,8 +9,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, JpegImagePlugin
 from pypdf import PdfWriter
 
-from jnotes2hinote.converter_v1_2_0 import convert
-from jnotes2hinote.converter_v1_5_3 import convert as convert_current
+from jnotes2hinote.converter import convert
 
 
 def java_utf(value: str) -> bytes:
@@ -133,7 +132,7 @@ def test_pdf_is_embedded_and_pages_reference_it(tmp_path: Path):
 
     result = convert(source, output)
 
-    assert result["converterVersion"] == "1.2.0"
+    assert result["converterVersion"] == "1.6.0"
     assert result["pdfStats"]["pdfBackedPages"] == 2
     assert result["pdfStats"]["sourcePdfSha256"]["import note.pdf"] == hashlib.sha256(pdf).hexdigest()
 
@@ -188,26 +187,26 @@ def test_pdf_page_index_errors_before_output(tmp_path: Path):
     assert not output.exists()
 
 
-def test_current_core_preserves_pdf_for_zip_jnotes_variant(tmp_path: Path):
+def test_converter_preserves_pdf_for_zip_jnotes_variant(tmp_path: Path):
     source, pdf = make_fixture(tmp_path)
     variant = tmp_path / "variant.Jnotes"
     with zipfile.ZipFile(source) as source_zip, zipfile.ZipFile(variant, "w") as archive:
         archive.writestr("zip.Jnotes", source_zip.read("zip.Jzip"))
 
     output = tmp_path / "variant.hinote"
-    result = convert_current(variant, output)
+    result = convert(variant, output)
 
-    assert result["converterVersion"] == "1.5.3"
+    assert result["converterVersion"] == "1.6.0"
     assert result["sourceContainer"]["entry"] == "zip.Jnotes"
     assert result["pdfStats"]["sourcePdfSha256"]["import note.pdf"] == hashlib.sha256(pdf).hexdigest()
     with zipfile.ZipFile(output) as archive:
         assert any(archive.read(name) == pdf for name in archive.namelist() if name.startswith("files/"))
 
 
-def test_current_core_generates_native_quality_thumbnail_for_every_pdf_page(tmp_path: Path):
+def test_converter_generates_native_quality_thumbnail_for_every_pdf_page(tmp_path: Path):
     source, _ = make_fixture(tmp_path, pdf=make_visible_pdf())
     output = tmp_path / "visible.hinote"
-    result = convert_current(source, output)
+    result = convert(source, output)
 
     assert result["thumbnailStats"] == {
         "generated": 2,
@@ -265,11 +264,11 @@ def test_current_core_generates_native_quality_thumbnail_for_every_pdf_page(tmp_
         ]
 
 
-def test_current_core_uses_native_metadata_for_landscape_pages(tmp_path: Path):
+def test_converter_uses_native_metadata_for_landscape_pages(tmp_path: Path):
     source, _ = make_fixture(tmp_path, pdf=make_visible_pdf(), landscape=True)
     output = tmp_path / "landscape.hinote"
 
-    result = convert_current(source, output)
+    result = convert(source, output)
 
     assert result["pageRatio"] == 1240 / 1754
     assert result["pageOrientation"] == 1
@@ -302,7 +301,7 @@ def test_current_core_uses_native_metadata_for_landscape_pages(tmp_path: Path):
             assert image.size == (1080, round(content["pageRatio"] * 1080))
 
 
-def test_current_core_generates_thumbnails_for_mixed_pdf_and_regular_pages(tmp_path: Path):
+def test_converter_generates_thumbnails_for_mixed_pdf_and_regular_pages(tmp_path: Path):
     note_id = "mixed-note"
     pdf_name = "mixed.pdf"
     page_1, blank_page, page_3 = "pdf-1", "blank", "pdf-2"
@@ -333,7 +332,7 @@ def test_current_core_generates_thumbnails_for_mixed_pdf_and_regular_pages(tmp_p
         archive.writestr("zip.Jzip", stream)
     output = tmp_path / "mixed.hinote"
 
-    result = convert_current(source, output)
+    result = convert(source, output)
 
     assert result["thumbnailStats"]["generated"] == 3
     assert result["thumbnailStats"]["pdfRendered"] == 2

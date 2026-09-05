@@ -155,19 +155,11 @@ jnotes2hinote input.Jnotes test.hinote --pages 5
 
 - [图形界面使用说明](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/gui.md)
 - [限制与兼容性说明](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/limitations.md)
-- [兼容性记录](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/compatibility.md)
+- [验证状态](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation.md)
 - [云记文件格式](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-jnotes.md)
 - [华为笔记文件格式](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-hinote.md)
 - [转换映射规则](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/mapping.md)
-- [v1.0.0 验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.0.0.md)
-- [v1.1.0 验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.0.md)
-- [v1.1.1 修复验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.1.md)
-- [v1.1.2 修复验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.2.md)
-- [v1.2.0 PDF 转换验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.2.0.md)
-- [v1.5.1 容器兼容性验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.1.md)
-- [v1.5.2 缩略图验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.2.md)
-- [v1.5.3 横向缩略图与封包验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.3.md)
-- [v1.6.0 安全输出与批量报告验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.6.0.md)
+- [逆向工程记录](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/reverse-engineering.md)
 
 ## 开发
 
@@ -178,7 +170,10 @@ pip install -e ".[dev]"
 pytest
 ```
 
-参与格式研究或代码开发前，请阅读 [CONTRIBUTING.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/CONTRIBUTING.md)。
+当前运行代码只保留非版本化的 `reader.py`、`converter.py` 和
+`thumbnail.py`；历史版本由 Git 提交和标签保存。
+
+参与格式研究或代码开发前，请阅读 [贡献指南](https://github.com/LTong-g/jnote_to_hinote/blob/main/.github/CONTRIBUTING.md)。
 
 ## 许可证
 

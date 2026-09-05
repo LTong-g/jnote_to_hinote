@@ -64,16 +64,3 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 target-version = "py310"
-extend-exclude = [
-  "src/jnotes2hinote/converter_v1_0_0.py",
-  "src/jnotes2hinote/converter_v1_1_0.py",
-  "src/jnotes2hinote/converter_v1_1_1.py",
-  "src/jnotes2hinote/converter_v1_1_2.py",
-  "src/jnotes2hinote/converter_v1_2_0.py",
-  "src/jnotes2hinote/converter_v1_5_1.py",
-  "src/jnotes2hinote/converter_v1_5_2.py",
-  "src/jnotes2hinote/converter_v1_5_3.py",
-  "src/jnotes2hinote/jnotes_reader_v1_5_1.py",
-  "src/jnotes2hinote/thumbnail_renderer_v1_5_2.py",
-  "src/jnotes2hinote/thumbnail_renderer_v1_5_3.py",
-]
