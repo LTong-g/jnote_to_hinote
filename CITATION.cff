@@ -4,6 +4,7 @@ message: "如果本逆向工程成果对你的研究或工具开发有帮助，�
 type: software
 authors:
   - name: Ray L
-version: 1.5.1
-date-released: 2026-09-02
+version: 1.6.0
+date-released: 2026-09-05
 license: MIT
+repository-code: "https://github.com/LTong-g/jnote_to_hinote"

@@ -29,6 +29,7 @@ from .batch import (
     collect_input_files,
     convert_batch,
 )
+from .reporting import redact_report
 
 APP_NAME = "Jnotes2Hinote"
 LANG_ZH = "zh"
@@ -58,6 +59,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "conflict_skip": "跳过已有文件",
         "conflict_overwrite": "覆盖已有文件",
         "report": "生成 JSON 转换报告",
+        "redact_report": "匿名化报告中的标题和完整路径",
         "report_path": "报告路径：",
         "report_browse": "选择…",
         "open_output_after": "转换完成后打开输出目录",
@@ -95,7 +97,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "status_done": "转换完成",
         "status_cancelled_run": "已停止转换",
         "summary_ready": "尚未开始转换",
-        "summary_format": "已发现 {total} 个文件，成功 {converted} 个，失败 {failed} 个",
+        "summary_format": "已发现 {total} 个文件，成功 {converted} 个，失败 {failed} 个，跳过 {skipped} 个，输入错误 {input_errors} 个",
         "current_format": "当前文件：{path}",
         "no_input": "请先添加至少一个输入文件、文件夹或 TXT 清单。",
         "no_output": "请选择输出目录。",
@@ -114,7 +116,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "running_close_title": "转换正在进行",
         "running_close": "转换尚未完成，确定要退出吗？",
         "done_title": "转换完成",
-        "done_message": "成功转换 {converted} 个文件，失败或跳过 {failed} 个。\n\n输出目录：{output}",
+        "done_message": "成功 {converted} 个，失败 {failed} 个，跳过 {skipped} 个，输入错误 {input_errors} 个。\n\n输出目录：{output}",
         "done_warning_title": "转换完成，但有问题",
         "done_cancelled_title": "转换已停止",
         "done_cancelled": "已完成 {converted} 个文件，尚有 {remaining} 个文件未执行。\n\n输出目录：{output}",
@@ -135,7 +137,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "log_file_failure": "失败：{source}：{error}",
         "log_file_skip": "跳过：{source}：{error}",
         "log_stopping": "已请求停止，将在当前文件完成后停止。",
-        "log_finished": "任务结束：成功 {converted}，失败或跳过 {failed}。",
+        "log_finished": "任务结束：成功 {converted}，失败 {failed}，跳过 {skipped}，输入错误 {input_errors}。",
         "log_report": "报告已写入：{path}",
         "log_report_failure": "报告写入失败：{error}",
         "log_open_failed": "无法打开路径：{error}",
@@ -161,6 +163,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "conflict_skip": "Skip existing files",
         "conflict_overwrite": "Overwrite existing files",
         "report": "Write JSON conversion report",
+        "redact_report": "Redact note titles and full paths in the report",
         "report_path": "Report path:",
         "report_browse": "Choose…",
         "open_output_after": "Open output directory when finished",
@@ -198,7 +201,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "status_done": "Conversion complete",
         "status_cancelled_run": "Conversion stopped",
         "summary_ready": "Conversion has not started",
-        "summary_format": "Found {total} files, converted {converted}, failed {failed}",
+        "summary_format": "Found {total} files: {converted} converted, {failed} failed, {skipped} skipped, {input_errors} input errors",
         "current_format": "Current file: {path}",
         "no_input": "Add at least one input file, folder or TXT list first.",
         "no_output": "Choose an output directory.",
@@ -217,7 +220,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "running_close_title": "Conversion in progress",
         "running_close": "Conversion is still running. Exit anyway?",
         "done_title": "Conversion complete",
-        "done_message": "Converted {converted} files successfully; {failed} failed or skipped.\n\nOutput directory: {output}",
+        "done_message": "Converted {converted}; failed {failed}; skipped {skipped}; input errors {input_errors}.\n\nOutput directory: {output}",
         "done_warning_title": "Conversion completed with warnings",
         "done_cancelled_title": "Conversion stopped",
         "done_cancelled": "Completed {converted} files; {remaining} files were not run.\n\nOutput directory: {output}",
@@ -238,7 +241,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "log_file_failure": "Failed: {source}: {error}",
         "log_file_skip": "Skipped: {source}: {error}",
         "log_stopping": "Stop requested; conversion will stop after the current file.",
-        "log_finished": "Task finished: {converted} converted, {failed} failed or skipped.",
+        "log_finished": "Task finished: {converted} converted, {failed} failed, {skipped} skipped, {input_errors} input errors.",
         "log_report": "Report written to: {path}",
         "log_report_failure": "Report write failed: {error}",
         "log_open_failed": "Could not open path: {error}",
@@ -337,12 +340,15 @@ class Jnotes2HinoteApp:
         self.pending_recursive = False
         self.completed = 0
         self.failed = 0
+        self.skipped = 0
+        self.input_errors = 0
         self.total = 0
 
         self.recursive_var = tk.BooleanVar(value=bool(self.settings.get("recursive", False)))
         self.pages_var = tk.StringVar(value=str(self.settings.get("pages", "0")))
         self.output_var = tk.StringVar(value=str(self.settings.get("output", "")))
         self.report_enabled_var = tk.BooleanVar(value=bool(self.settings.get("report_enabled", True)))
+        self.redact_report_var = tk.BooleanVar(value=bool(self.settings.get("redact_report", False)))
         self.report_var = tk.StringVar(value=str(self.settings.get("report", "")))
         self.open_output_var = tk.BooleanVar(value=bool(self.settings.get("open_output", True)))
         self.language_display_var = tk.StringVar()
@@ -535,8 +541,10 @@ class Jnotes2HinoteApp:
         self.report_entry.grid(row=4, column=1, sticky="ew", pady=(5, 8))
         self.button_widgets["browse_report"] = ttk.Button(output_frame, command=self._choose_report)
         self.button_widgets["browse_report"].grid(row=4, column=2, padx=(6, 8), pady=(5, 8))
+        self.check_widgets["redact_report"] = ttk.Checkbutton(output_frame, variable=self.redact_report_var)
+        self.check_widgets["redact_report"].grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 5))
         self.check_widgets["open_output_after"] = ttk.Checkbutton(output_frame, variable=self.open_output_var)
-        self.check_widgets["open_output_after"].grid(row=5, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 8))
+        self.check_widgets["open_output_after"].grid(row=6, column=0, columnspan=3, sticky="w", padx=8, pady=(0, 8))
 
         results_log = tk.PanedWindow(
             right_column,
@@ -627,6 +635,7 @@ class Jnotes2HinoteApp:
             self.report_check,
             self.report_entry,
             self.check_widgets["recursive"],
+            self.check_widgets["redact_report"],
             self.check_widgets["open_output_after"],
             self.language_combo,
         ])
@@ -851,6 +860,7 @@ class Jnotes2HinoteApp:
         state = "normal" if self.report_enabled_var.get() and self.phase == "idle" else "disabled"
         self.report_entry.configure(state=state)
         self.button_widgets["browse_report"].configure(state=state)
+        self.check_widgets["redact_report"].configure(state=state)
 
     def _open_source_location(self, _event: tk.Event | None = None) -> None:
         item = self.source_tree.selection()[0] if self.source_tree.selection() else ""
@@ -924,6 +934,8 @@ class Jnotes2HinoteApp:
         self.cancel_event.clear()
         self.completed = 0
         self.failed = 0
+        self.skipped = 0
+        self.input_errors = 0
         self.total = 0
         for item in self.result_tree.get_children():
             self.result_tree.delete(item)
@@ -953,8 +965,9 @@ class Jnotes2HinoteApp:
         self.phase = "converting"
         self.status_var.set(self._t("status_converting"))
         self.total = len(self.pending_files)
+        self.input_errors = len(self.pending_errors)
         self.progress_bar.configure(maximum=max(self.total, 1), value=0)
-        self.summary_var.set(self._t("summary_format", total=self.total, converted=0, failed=len(self.pending_errors)))
+        self._refresh_summary()
         self.current_var.set(self._t("current_format", path="—"))
         self._append_log(self._t("log_start", total=self.total))
         self.worker_thread = threading.Thread(target=self._convert_worker, daemon=True)
@@ -976,7 +989,11 @@ class Jnotes2HinoteApp:
             if self.pending_report is not None:
                 try:
                     self.pending_report.parent.mkdir(parents=True, exist_ok=True)
-                    self.pending_report.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+                    report_payload = redact_report(summary) if self.redact_report_var.get() else summary
+                    self.pending_report.write_text(
+                        json.dumps(report_payload, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
                 except OSError as exc:
                     report_error = str(exc)
             self.event_queue.put(("done", (summary, report_error)))
@@ -1057,7 +1074,7 @@ class Jnotes2HinoteApp:
             )
             self._append_log(self._t("log_file_failure", source=update.source, error=update.error or ""))
         elif update.status == "skipped":
-            self.failed += 1
+            self.skipped += 1
             self.result_tree.insert(
                 "",
                 "end",
@@ -1070,8 +1087,18 @@ class Jnotes2HinoteApp:
     def _handle_done(self, summary: dict[str, Any], report_error: str | None) -> None:
         self.completed = int(summary.get("converted", 0))
         self.failed = int(summary.get("failed", 0))
+        self.skipped = int(summary.get("skipped", 0))
+        self.input_errors = int(summary.get("inputErrors", 0))
         self._refresh_summary()
-        self._append_log(self._t("log_finished", converted=self.completed, failed=self.failed))
+        self._append_log(
+            self._t(
+                "log_finished",
+                converted=self.completed,
+                failed=self.failed,
+                skipped=self.skipped,
+                input_errors=self.input_errors,
+            )
+        )
         if self.pending_report is not None and report_error is None:
             self._append_log(self._t("log_report", path=self.pending_report))
         elif report_error:
@@ -1079,7 +1106,7 @@ class Jnotes2HinoteApp:
         was_cancelled = bool(summary.get("cancelled"))
         self._set_idle()
         if was_cancelled:
-            remaining = max(0, self.total - self.completed - self.failed)
+            remaining = int(summary.get("notRun", 0))
             self.status_var.set(self._t("status_cancelled_run"))
             messagebox.showwarning(
                 self._t("done_cancelled_title"),
@@ -1093,10 +1120,18 @@ class Jnotes2HinoteApp:
                 open_path(self.pending_output)
             except OSError as exc:
                 self._append_log(self._t("log_open_failed", error=exc))
-        title = self._t("done_title") if self.failed == 0 else self._t("done_warning_title")
+        problem_count = self.failed + self.skipped + self.input_errors
+        title = self._t("done_title") if problem_count == 0 else self._t("done_warning_title")
         messagebox.showinfo(
             title,
-            self._t("done_message", converted=self.completed, failed=self.failed, output=self.pending_output),
+            self._t(
+                "done_message",
+                converted=self.completed,
+                failed=self.failed,
+                skipped=self.skipped,
+                input_errors=self.input_errors,
+                output=self.pending_output,
+            ),
             parent=self.root,
         )
 
@@ -1117,7 +1152,16 @@ class Jnotes2HinoteApp:
 
     def _refresh_summary(self) -> None:
         if self.total:
-            self.summary_var.set(self._t("summary_format", total=self.total, converted=self.completed, failed=self.failed))
+            self.summary_var.set(
+                self._t(
+                    "summary_format",
+                    total=self.total,
+                    converted=self.completed,
+                    failed=self.failed,
+                    skipped=self.skipped,
+                    input_errors=self.input_errors,
+                )
+            )
         else:
             self.summary_var.set(self._t("summary_ready"))
 
@@ -1202,6 +1246,7 @@ class Jnotes2HinoteApp:
                     "pages": self.pages_var.get(),
                     "output": self.output_var.get(),
                     "report_enabled": self.report_enabled_var.get(),
+                    "redact_report": self.redact_report_var.get(),
                     "report": self.report_var.get(),
                     "open_output": self.open_output_var.get(),
                     "conflict_strategy": self.pending_conflict,

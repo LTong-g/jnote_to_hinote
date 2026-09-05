@@ -7,7 +7,7 @@ import zipfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw, JpegImagePlugin
-from PyPDF2 import PdfWriter
+from pypdf import PdfWriter
 
 from jnotes2hinote.converter_v1_2_0 import convert
 from jnotes2hinote.converter_v1_5_3 import convert as convert_current

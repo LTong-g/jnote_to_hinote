@@ -41,7 +41,7 @@ def test_translucent_type6_b12_is_highlighter():
             {"x": 30.0, "y": 40.0, "p": 0.3},
         ],
     }
-    body, count, native_geometry = _build_geometry_body({"c": c}, 1.0)
+    body, _count, native_geometry = _build_geometry_body({"c": c}, 1.0)
     style = body[:108]
     assert native_geometry is False
     assert struct.unpack_from(">I", style, 56)[0] == 5  # 华为荧光笔

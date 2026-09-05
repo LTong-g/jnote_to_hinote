@@ -4,11 +4,11 @@
 
 目前已实机验证的版本组合是：**云记 3.2.3.2 → 华为笔记 15.0.14.295**。其他版本没有经过验证，转换结果可能有所不同。
 
-当前版本：**v1.5.3**。项目提供桌面图形界面，也支持命令行批量转换。
+当前版本：**v1.6.0**。项目提供桌面图形界面，也支持命令行批量转换。
 
-v1.5.3 会为每一个普通页面和 PDF 页面生成最长边 1080 像素、JPEG 质量 100 的清晰缩略图；PDF 页面缩略图由原始 PDF 正文与可编辑覆盖层合成。横向页使用原生的 `pageRatio<1` / `pageOrientation=1` 结构。
+v1.6.0 保留 v1.5.3 的高清缩略图和横向页结构，并保证单文件输出始终以 `.hinote` 结尾，同时改进批量统计、错误退出码和报告隐私。
 
-英文版：[README.en.md](README.en.md)
+英文版：[README.en.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/README.en.md)
 
 ## 推荐用法：桌面界面
 
@@ -58,7 +58,7 @@ python -m jnotes2hinote.gui
 
 程序兼容云记导出的两种 Jnotes 文件结构；它们只是压缩包内数据入口名称不同，不影响正常转换。
 
-GUI 的完整说明见：[图形界面使用说明](docs/gui.md)。
+GUI 的完整说明见：[图形界面使用说明](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/gui.md)。
 
 ## 命令行用法
 
@@ -123,7 +123,9 @@ jnotes2hinote notes output --recursive --report conversion-report.json
 jnotes2hinote input.Jnotes test.hinote --pages 5
 ```
 
-批量转换时，输出参数必须是文件夹。输出文件默认使用原文件名；如果出现重名，命令行转换器会自动添加序号。输入和输出不要使用同一个路径，并建议保留原始 `.Jnotes` 文件。
+批量转换时，输出参数必须是文件夹。输出文件默认使用原文件名；如果出现重名，命令行转换器会自动添加序号。单文件输出路径如果不是以 `.hinote` 结尾，程序会自动追加该扩展名；例如 `result` 生成 `result.hinote`，`result.txt` 生成 `result.txt.hinote`。建议始终保留原始 `.Jnotes` 文件。
+
+批量命令全部成功时退出码为 0，部分成功时为 2，完全失败或参数错误时为 1。使用 `--debug` 可在转换错误时显示完整异常信息；使用 `--redact-report` 可从 JSON 输出和报告中移除笔记标题及完整路径。
 
 ## 转换内容与注意事项
 
@@ -151,18 +153,21 @@ jnotes2hinote input.Jnotes test.hinote --pages 5
 
 ## 其他文档
 
-- [图形界面使用说明](docs/gui.md)
-- [限制与兼容性说明](docs/limitations.md)
-- [兼容性记录](docs/compatibility.md)
-- [云记文件格式](docs/format-jnotes.md)
-- [华为笔记文件格式](docs/format-hinote.md)
-- [转换映射规则](docs/mapping.md)
-- [v1.0.0 验证摘要](docs/validation-v1.0.0.md)
-- [v1.1.0 验证摘要](docs/validation-v1.1.0.md)
-- [v1.1.1 修复验证摘要](docs/validation-v1.1.1.md)
-- [v1.1.2 修复验证摘要](docs/validation-v1.1.2.md)
-- [v1.2.0 PDF 转换验证摘要](docs/validation-v1.2.0.md)
-- [v1.5.1 容器兼容性验证摘要](docs/validation-v1.5.1.md)
+- [图形界面使用说明](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/gui.md)
+- [限制与兼容性说明](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/limitations.md)
+- [兼容性记录](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/compatibility.md)
+- [云记文件格式](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-jnotes.md)
+- [华为笔记文件格式](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-hinote.md)
+- [转换映射规则](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/mapping.md)
+- [v1.0.0 验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.0.0.md)
+- [v1.1.0 验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.0.md)
+- [v1.1.1 修复验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.1.md)
+- [v1.1.2 修复验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.2.md)
+- [v1.2.0 PDF 转换验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.2.0.md)
+- [v1.5.1 容器兼容性验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.1.md)
+- [v1.5.2 缩略图验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.2.md)
+- [v1.5.3 横向缩略图与封包验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.3.md)
+- [v1.6.0 安全输出与批量报告验证摘要](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.6.0.md)
 
 ## 开发
 
@@ -173,8 +178,8 @@ pip install -e ".[dev]"
 pytest
 ```
 
-参与格式研究或代码开发前，请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+参与格式研究或代码开发前，请阅读 [CONTRIBUTING.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/CONTRIBUTING.md)。
 
 ## 许可证
 
-MIT，见 [LICENSE](LICENSE)。
+MIT，见 [LICENSE](https://github.com/LTong-g/jnote_to_hinote/blob/main/LICENSE)。

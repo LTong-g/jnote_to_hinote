@@ -6,9 +6,9 @@
 
 ```bash
 jnotes2hinote MyNotebook.Jnotes MyNotebook.hinote \
-  --reference-hinote references/pen-reference.hinote \
-  --shape-reference-hinote references/shape-reference.hinote \
   --report reports/MyNotebook.json
 ```
 
 完整转换前，请先使用 `--pages 5`，再将较小的结果导入华为笔记进行检查。
+
+v1.1.0 及以后的当前转换路径不再需要参考 `.hinote` 文件。需要复现冻结的 v1.0.0 研究路径时，请阅读 [旧版参考文件说明](../docs/reference-files.md)。

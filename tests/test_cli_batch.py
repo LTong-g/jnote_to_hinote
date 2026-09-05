@@ -1,7 +1,10 @@
+import json
 from pathlib import Path
+from threading import Event
 
 from jnotes2hinote.batch import CONFLICT_OVERWRITE, CONFLICT_RENAME, CONFLICT_SKIP, convert_batch
-from jnotes2hinote.cli import collect_input_files, plan_output_paths
+from jnotes2hinote.cli import collect_input_files, main, plan_output_paths
+from jnotes2hinote.reporting import redact_report
 
 
 def test_directory_collection_is_one_level_by_default(tmp_path: Path):
@@ -92,4 +95,97 @@ def test_batch_runner_emits_progress_and_continues_after_failure(tmp_path: Path,
 
     assert summary["converted"] == 1
     assert summary["failed"] == 1
+    assert summary["skipped"] == 0
+    assert summary["inputErrors"] == 0
+    assert summary["notRun"] == 0
     assert [update.status for update in updates] == ["converted", "failed"]
+
+
+def test_batch_summary_separates_skips_input_errors_and_not_run(tmp_path: Path):
+    source = tmp_path / "note.Jnotes"
+    source.touch()
+    output = tmp_path / "output"
+    output.mkdir()
+    (output / "note.hinote").touch()
+
+    summary = convert_batch(
+        [source],
+        output,
+        conflict_strategy=CONFLICT_SKIP,
+        initial_errors=[{"path": "missing.Jnotes", "error": "missing"}],
+    )
+
+    assert summary["schemaVersion"] == 2
+    assert summary["converted"] == 0
+    assert summary["failed"] == 0
+    assert summary["skipped"] == 1
+    assert summary["inputErrors"] == 1
+    assert summary["notRun"] == 0
+    assert {item["kind"] for item in summary["errors"]} == {"input_error", "skipped"}
+
+    cancel_event = Event()
+    cancel_event.set()
+    cancelled = convert_batch([source], output, cancel_event=cancel_event)
+    assert cancelled["cancelled"] is True
+    assert cancelled["notRun"] == 1
+
+
+def test_cli_returns_two_for_partial_batch_failure(tmp_path: Path, monkeypatch, capsys):
+    first = tmp_path / "first.Jnotes"
+    second = tmp_path / "second.Jnotes"
+    output = tmp_path / "output"
+
+    monkeypatch.setattr(
+        "jnotes2hinote.cli.collect_input_files",
+        lambda *_args, **_kwargs: ([first, second], []),
+    )
+    monkeypatch.setattr(
+        "jnotes2hinote.cli.convert_batch",
+        lambda *_args, **_kwargs: {
+            "converted": 1,
+            "failed": 1,
+            "skipped": 0,
+            "inputErrors": 0,
+            "cancelled": False,
+            "errors": [{"path": str(second), "error": "bad input", "kind": "conversion_failed"}],
+        },
+    )
+
+    assert main([str(first), str(second), str(output)]) == 2
+    error_output = capsys.readouterr().err
+    assert "转换失败" in error_output
+    assert "bad input" in error_output
+
+
+def test_single_file_expected_error_has_no_traceback(tmp_path: Path, monkeypatch, capsys):
+    source = tmp_path / "broken.Jnotes"
+    source.touch()
+    monkeypatch.setattr("jnotes2hinote.cli.convert", lambda *_args, **_kwargs: (_ for _ in ()).throw(KeyError("bad zip")))
+
+    assert main([str(source), str(tmp_path / "output")]) == 1
+    captured = capsys.readouterr()
+    assert "转换失败：'bad zip'" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_report_redaction_removes_titles_and_full_paths():
+    payload = {
+        "source": r"C:\\Users\\name\\private.Jnotes",
+        "outputDirectory": r"D:\\private\\output",
+        "title": "私人笔记",
+        "errors": [
+            {
+                "path": r"D:\\private\\missing.Jnotes:4",
+                "error": r"输入路径不存在：C:\\Users\\name\\Private Notes\\missing.Jnotes",
+            }
+        ],
+    }
+
+    redacted = redact_report(payload)
+
+    encoded = json.dumps(redacted, ensure_ascii=False)
+    assert "私人笔记" not in encoded
+    assert "Users" not in encoded
+    assert "Private Notes" not in encoded
+    assert "private.Jnotes" in encoded
+    assert "missing.Jnotes" in encoded

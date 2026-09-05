@@ -21,4 +21,7 @@ python -m venv .venv
 # macOS/Linux：source .venv/bin/activate
 pip install -e ".[dev]"
 pytest
+ruff check .
 ```
+
+Windows 打包路径支持 PyInstaller 5.13 及以上版本。运行 `scripts/clean_build.ps1 -WhatIf` 可以预览构建目录清理；只有显式增加 `-IncludeDist` 才会删除 `dist`。

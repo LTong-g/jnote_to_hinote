@@ -44,6 +44,8 @@ Set **Pages** to `0` to convert all pages. A positive value converts only the fi
 
 When the JSON report option is enabled, the default path is `conversion_report.json` in the output directory. The report contains successful, failed and skipped files together with conversion results.
 
+Enable **Redact note titles and full paths in the report** to hide note titles and shorten source, output and error paths to filenames. A redacted report can still contain page counts and conversion statistics, so review it before sharing.
+
 ## Conversion flow
 
 After clicking **Start conversion**, the application scans all inputs and shows the number of discovered files. If a path is missing, unreadable or contains no supported files, the problem is shown and the application asks whether the remaining valid files should continue.
@@ -69,4 +71,6 @@ Install the optional build dependency and run:
 ./scripts/build_windows.ps1
 ```
 
-The script produces a no-console Windows application directory. Run `dist/Jnotes2Hinote/Jnotes2Hinote.exe` and keep the runtime files in the `dist/Jnotes2Hinote` directory. The packaged application uses the current v1.5.3 conversion core.
+The script produces a no-console Windows application directory. Run `dist/Jnotes2Hinote/Jnotes2Hinote.exe` and keep the runtime files in the `dist/Jnotes2Hinote` directory. The packaged application uses the current v1.6.0 conversion core. The Windows build path supports PyInstaller 5.13 or newer.
+
+Run `./scripts/clean_build.ps1` to remove intermediate build files. Add `-IncludeDist` explicitly to remove the release directory too, and use `-WhatIf` to preview the affected directories.

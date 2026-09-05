@@ -14,6 +14,7 @@ from .batch import (
     plan_output_paths,
 )
 from .current_core import convert
+from .reporting import redact_report
 
 
 def non_negative_int(value: str) -> int:
@@ -42,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-r", "--recursive", action="store_true", help="递归搜索输入目录中的 Jnotes 文件")
     p.add_argument("--pages", type=non_negative_int, default=0, help="每个文件只转换前 N 页；0 = 全部")
     p.add_argument("--report", type=Path, default=None, help="写入单个结果或批量汇总 JSON 报告")
+    p.add_argument(
+        "--redact-report",
+        action="store_true",
+        help="从 JSON 输出和报告中移除笔记标题及完整路径",
+    )
+    p.add_argument("--debug", action="store_true", help="转换失败时显示完整 Python 异常信息")
     p.add_argument("--version", action="version", version=f"jnotes2hinote {__version__}")
     return p
 
@@ -57,6 +64,14 @@ def _print_json(payload: dict[str, Any] | list[Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
+def _error_label(error: dict[str, str]) -> str:
+    return {
+        "conversion_failed": "转换失败",
+        "input_error": "输入错误",
+        "skipped": "跳过",
+    }.get(error.get("kind", ""), "错误")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_intermixed_args(argv)
     input_is_batch = len(args.inputs) > 1 or any(
@@ -68,9 +83,16 @@ def main(argv: list[str] | None = None) -> int:
     input_files, errors = collect_input_files(args.inputs, recursive=args.recursive)
 
     if not batch_mode and len(input_files) == 1 and not errors:
-        result = convert(input_files[0], args.output, page_limit=args.pages or None)
-        _write_report(args.report, result)
-        _print_json(result)
+        try:
+            result = convert(input_files[0], args.output, page_limit=args.pages or None)
+        except Exception as exc:
+            if args.debug:
+                raise
+            print(f"转换失败：{exc}", file=sys.stderr)
+            return 1
+        payload = redact_report(result) if args.redact_report else result
+        _write_report(args.report, payload)
+        _print_json(payload)
         return 0
 
     if not batch_mode:
@@ -100,10 +122,16 @@ def main(argv: list[str] | None = None) -> int:
         conflict_strategy=CONFLICT_RENAME,
         initial_errors=errors,
     )
-    _write_report(args.report, summary)
-    _print_json(summary)
+    payload = redact_report(summary) if args.redact_report else summary
+    _write_report(args.report, payload)
+    _print_json(payload)
     for error in summary["errors"]:
-        print(f"跳过：{error['path']}：{error['error']}", file=sys.stderr)
+        print(f"{_error_label(error)}：{error['path']}：{error['error']}", file=sys.stderr)
+    if summary.get("cancelled"):
+        return 130
+    problem_count = int(summary.get("failed", 0)) + int(summary.get("inputErrors", 0))
+    if problem_count:
+        return 2 if summary["converted"] else 1
     return 0 if summary["converted"] else 1
 
 

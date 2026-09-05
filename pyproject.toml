@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jnotes2hinote"
-version = "1.5.3"
+version = "1.6.0"
 description = "将经过设备验证的 Jideos 云记（.Jnotes）转换为华为笔记（.hinote），并保留原生可编辑笔迹"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -28,10 +28,16 @@ classifiers = [
 ]
 dependencies = [
   "Pillow>=10.0",
-  "PyPDF2>=2.10",
+  "pypdf>=5.0,<7",
   "pypdfium2>=5.13.0,<6",
   "tkinterdnd2>=0.4.2"
 ]
+
+[project.urls]
+Homepage = "https://github.com/LTong-g/jnote_to_hinote"
+Repository = "https://github.com/LTong-g/jnote_to_hinote"
+Issues = "https://github.com/LTong-g/jnote_to_hinote/issues"
+Changelog = "https://github.com/LTong-g/jnote_to_hinote/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -39,7 +45,7 @@ dev = [
   "ruff>=0.6"
 ]
 build = [
-  "pyinstaller>=6.0"
+  "pyinstaller>=5.13"
 ]
 
 [project.scripts]
@@ -58,3 +64,16 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+extend-exclude = [
+  "src/jnotes2hinote/converter_v1_0_0.py",
+  "src/jnotes2hinote/converter_v1_1_0.py",
+  "src/jnotes2hinote/converter_v1_1_1.py",
+  "src/jnotes2hinote/converter_v1_1_2.py",
+  "src/jnotes2hinote/converter_v1_2_0.py",
+  "src/jnotes2hinote/converter_v1_5_1.py",
+  "src/jnotes2hinote/converter_v1_5_2.py",
+  "src/jnotes2hinote/converter_v1_5_3.py",
+  "src/jnotes2hinote/jnotes_reader_v1_5_1.py",
+  "src/jnotes2hinote/thumbnail_renderer_v1_5_2.py",
+  "src/jnotes2hinote/thumbnail_renderer_v1_5_3.py",
+]

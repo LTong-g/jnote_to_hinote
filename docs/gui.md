@@ -44,6 +44,8 @@ TXT 清单中的空行和以 `#` 开头的行会被忽略。相对路径以 TXT 
 
 启用 JSON 报告后，默认写入输出目录中的 `conversion_report.json`。报告会记录成功、失败、跳过的文件和转换结果。
 
+勾选“匿名化报告中的标题和完整路径”后，报告会隐藏笔记标题，并把源文件、输出文件及错误路径缩短为文件名。报告即使匿名化也可能包含页数和转换统计，分享前仍应检查内容。
+
 ## 转换过程
 
 点击“开始转换”后，程序会先扫描输入来源并显示发现的文件数量。如果有路径不存在、无法读取或目录为空，程序会列出问题，并询问是否继续处理其他可用文件。
@@ -81,4 +83,6 @@ TXT 清单中的空行和以 `#` 开头的行会被忽略。相对路径以 TXT 
 ./scripts/build_windows.ps1
 ```
 
-生成的程序位于 `dist/Jnotes2Hinote/Jnotes2Hinote.exe`。请保留 `dist/Jnotes2Hinote` 目录中的运行库文件；打包程序使用当前的 v1.5.1 转换核心。
+生成的程序位于 `dist/Jnotes2Hinote/Jnotes2Hinote.exe`。请保留 `dist/Jnotes2Hinote` 目录中的运行库文件；打包程序使用当前的 v1.6.0 转换核心。当前 Windows 构建路径支持 PyInstaller 5.13 及以上版本。
+
+只清理构建中间文件时运行 `./scripts/clean_build.ps1`；同时删除 `dist` 发布目录时必须显式增加 `-IncludeDist`。可先使用 `-WhatIf` 查看将删除的目录。

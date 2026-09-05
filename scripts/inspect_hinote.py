@@ -72,7 +72,7 @@ def main() -> None:
             data = z.read(name)
             try:
                 rows = inspect_bin(data)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - inspection continues after any malformed archive entry
                 print(f"{name}：解析失败：{exc}")
                 continue
             print(f"{name}：{len(rows)} 条笔迹主体")

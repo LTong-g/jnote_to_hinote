@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from jnotes2hinote.converter_v1_6_0 import ensure_hinote_suffix
 from jnotes2hinote.current_core import convert, parse_jnotes_with_info
 
 
@@ -74,7 +75,7 @@ def test_current_core_converts_both_container_names(tmp_path: Path, entry_name: 
     result = convert(source, output)
 
     assert output.is_file()
-    assert result["converterVersion"] == "1.5.3"
+    assert result["converterVersion"] == "1.6.0"
     assert result["sourceContainer"]["entry"] == entry_name
     assert result["pages"] == 1
 
@@ -117,3 +118,40 @@ def test_reader_does_not_silently_truncate_a_record(tmp_path: Path):
 
     with pytest.raises(ValueError, match="记录在偏移"):
         parse_jnotes_with_info(source)
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("output", "output.hinote"),
+        ("output.txt", "output.txt.hinote"),
+        ("output.hinote", "output.hinote"),
+        ("output.HINOTE", "output.HINOTE"),
+    ],
+)
+def test_hinote_suffix_is_appended_only_when_needed(name: str, expected: str):
+    assert ensure_hinote_suffix(Path(name)) == Path(expected)
+
+
+def test_current_core_appends_hinote_suffix_to_file_output(tmp_path: Path):
+    source = tmp_path / "source.Jnotes"
+    requested = tmp_path / "result.txt"
+    write_container(source, ["zip.Jnotes"])
+
+    result = convert(source, requested)
+
+    actual = tmp_path / "result.txt.hinote"
+    assert actual.is_file()
+    assert not requested.exists()
+    assert result["output"] == str(actual)
+
+
+def test_current_core_never_replaces_same_named_source(tmp_path: Path):
+    source = tmp_path / "source.Jnotes"
+    write_container(source, ["zip.Jnotes"])
+    original = source.read_bytes()
+
+    result = convert(source, source)
+
+    assert source.read_bytes() == original
+    assert result["output"] == str(tmp_path / "source.Jnotes.hinote")

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Event
-from typing import Any, Callable
+from typing import Any
 
 from .current_core import convert
 
@@ -43,12 +44,18 @@ def clean_manifest_line(line: str) -> str:
     return value
 
 
-def record_error(errors: list[dict[str, str]], path: str, exc: Exception | str) -> None:
+def record_error(
+    errors: list[dict[str, str]],
+    path: str,
+    exc: Exception | str,
+    *,
+    kind: str = "conversion_failed",
+) -> None:
     if isinstance(exc, str):
         message = exc
     else:
         message = str(exc) or exc.__class__.__name__
-    errors.append({"path": path, "error": message})
+    errors.append({"path": path, "error": message, "kind": kind})
 
 
 def collect_input_files(
@@ -97,8 +104,8 @@ def collect_input_files(
                         listed_path = path.parent / listed_path
                     try:
                         visit(listed_path, origin)
-                    except Exception as exc:
-                        record_error(errors, f"{path}:{line_number}", exc)
+                    except Exception as exc:  # noqa: BLE001 - one bad manifest entry must not abort collection
+                        record_error(errors, f"{path}:{line_number}", exc, kind="input_error")
                 if listed == 0:
                     raise ValueError(f"路径清单为空：{path}")
                 return
@@ -123,8 +130,8 @@ def collect_input_files(
     for input_path in input_paths:
         try:
             visit(input_path, str(input_path))
-        except Exception as exc:
-            record_error(errors, str(input_path), exc)
+        except Exception as exc:  # noqa: BLE001 - one bad input must not abort collection
+            record_error(errors, str(input_path), exc, kind="input_error")
 
     return files, errors
 
@@ -200,8 +207,13 @@ def convert_batch(
 ) -> dict[str, Any]:
     """Convert files sequentially and continue after per-file failures."""
 
-    errors = list(initial_errors or [])
+    errors = [
+        {**item, "kind": item.get("kind", "input_error")}
+        for item in (initial_errors or [])
+    ]
     results: list[dict[str, Any]] = []
+    failed = 0
+    skipped = 0
     output_dir.mkdir(parents=True, exist_ok=True)
     output_paths = plan_output_paths(
         input_files,
@@ -219,15 +231,17 @@ def convert_batch(
         output_file = output_paths[input_file]
         if output_file is None:
             message = "输出文件已存在，已跳过"
-            record_error(errors, str(input_file), message)
+            skipped += 1
+            record_error(errors, str(input_file), message, kind="skipped")
             if progress_callback:
                 progress_callback(BatchProgress(index, total, input_file, None, "skipped", error=message))
             continue
 
         try:
             result = convert(input_file, output_file, page_limit=page_limit)
-        except Exception as exc:
-            record_error(errors, str(input_file), exc)
+        except Exception as exc:  # noqa: BLE001 - batch conversion isolates failures per file
+            failed += 1
+            record_error(errors, str(input_file), exc, kind="conversion_failed")
             if progress_callback:
                 progress_callback(BatchProgress(index, total, input_file, output_file, "failed", error=str(exc)))
             continue
@@ -236,14 +250,20 @@ def convert_batch(
         if progress_callback:
             progress_callback(BatchProgress(index, total, input_file, output_file, "converted", result=result))
 
+    input_errors = sum(item.get("kind") == "input_error" for item in errors)
+    not_run = max(0, total - len(results) - failed - skipped)
     summary = {
+        "schemaVersion": 2,
         "mode": "batch",
         "recursive": recursive,
         "outputDirectory": str(output_dir),
         "conflictStrategy": conflict_strategy,
         "total": total,
         "converted": len(results),
-        "failed": len(errors),
+        "failed": failed,
+        "skipped": skipped,
+        "inputErrors": input_errors,
+        "notRun": not_run,
         "cancelled": cancelled,
         "results": results,
         "errors": errors,

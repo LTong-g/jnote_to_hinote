@@ -14,19 +14,31 @@ $pyInstallerConfig = Join-Path $repoRoot "build\pyinstaller-cache"
 New-Item -ItemType Directory -Force -Path $pyInstallerConfig | Out-Null
 $env:PYINSTALLER_CONFIG_DIR = $pyInstallerConfig
 
-$runtimeReady = $true
+$dependencyCheck = @"
+import PIL
+import PyInstaller
+import pypdf
+import pypdfium2
+import pypdfium2_raw
+import tkinterdnd2
+
+version = tuple(int(part) for part in PyInstaller.__version__.split('.')[:2])
+if version < (5, 13):
+    raise RuntimeError(f'PyInstaller 5.13 or newer is required, found {PyInstaller.__version__}')
+"@
 $previousErrorActionPreference = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
-& $buildPython -c "import PyInstaller, PyPDF2, pypdfium2, pypdfium2_raw" 2>$null
-$runtimeCheckExitCode = $LASTEXITCODE
+& $buildPython -c $dependencyCheck 2>$null
+$dependencyCheckExitCode = $LASTEXITCODE
 $ErrorActionPreference = $previousErrorActionPreference
-if ($runtimeCheckExitCode -ne 0) {
-    $runtimeReady = $false
-}
-if (-not $runtimeReady) {
+if ($dependencyCheckExitCode -ne 0) {
     & $buildPython -m pip install --no-build-isolation -e ".[build]"
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install build dependencies (exit code $LASTEXITCODE)"
+    }
+    & $buildPython -c $dependencyCheck
+    if ($LASTEXITCODE -ne 0) {
+        throw "Build dependencies do not satisfy the supported versions"
     }
 }
 $excludeModules = @(
@@ -59,7 +71,7 @@ $pyInstallerArgs = @(
     "--workpath", "build\pyinstaller",
     "--specpath", "build\pyinstaller",
     "--additional-hooks-dir", "scripts\pyinstaller-hooks",
-    "--hidden-import", "PyPDF2",
+    "--hidden-import", "pypdf",
     "--hidden-import", "pypdfium2",
     "--hidden-import", "pypdfium2_raw"
 )

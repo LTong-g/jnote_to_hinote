@@ -4,11 +4,11 @@ Convert Jnotes notebooks (`.Jnotes` / `.jnote`) into Huawei Notes `.hinote` file
 
 The currently device-tested version combination is **Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295**. Other versions have not been verified and may produce different results.
 
-Current version: **v1.5.3**. The project provides a desktop GUI as well as command-line batch conversion.
+Current version: **v1.6.0**. The project provides a desktop GUI as well as command-line batch conversion.
 
-v1.5.3 generates a JPEG-quality-100 thumbnail with a 1080-pixel longest edge for every regular and PDF-backed page, composites PDF previews with editable overlays, and encodes landscape pages with native `pageRatio < 1` / `pageOrientation = 1` metadata.
+v1.6.0 preserves v1.5.3's high-quality thumbnails and landscape-page format, while ensuring file outputs end in `.hinote` and improving batch statistics, exit codes and report privacy.
 
-Chinese version: [README.md](README.md)
+Chinese version: [README.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/README.md)
 
 ## Recommended: use the desktop GUI
 
@@ -58,7 +58,7 @@ The GUI recognizes `.Jnotes` and `.jnote` files. A TXT list contains one file or
 
 The converter supports the two Jnotes container variants used by the tested exports. They differ only in the name of the data member inside the ZIP archive.
 
-See the [GUI guide](docs/gui.en.md) for complete instructions.
+See the [GUI guide](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/gui.en.md) for complete instructions.
 
 ## Command-line usage
 
@@ -123,7 +123,9 @@ Convert the first 5 pages as a quick test:
 jnotes2hinote input.Jnotes test.hinote --pages 5
 ```
 
-For batch conversion, the output argument must be a folder. Output files use the source filename by default; the command-line converter adds a numeric suffix when names conflict. Do not use the same path for input and output, and keep the original `.Jnotes` files.
+For batch conversion, the output argument must be a folder. Output files use the source filename by default; the command-line converter adds a numeric suffix when names conflict. For a single file, `.hinote` is appended unless the output already has that final suffix: `result` becomes `result.hinote`, while `result.txt` becomes `result.txt.hinote`. Keep the original `.Jnotes` files.
+
+A batch command exits with 0 when every file succeeds, 2 after partial success, and 1 after total failure or an argument error. Use `--debug` to show full exception details for conversion errors, or `--redact-report` to remove note titles and full paths from JSON output and reports.
 
 ## Converted content and limitations
 
@@ -151,18 +153,21 @@ This is an unofficial interoperability tool based on reverse engineering, not an
 
 ## Further documentation
 
-- [GUI guide](docs/gui.en.md)
-- [Limitations and compatibility](docs/limitations.md)
-- [Compatibility record](docs/compatibility.md)
-- [Jnotes file format](docs/format-jnotes.md)
-- [Huawei Notes file format](docs/format-hinote.md)
-- [Conversion mapping rules](docs/mapping.md)
-- [v1.0.0 validation summary](docs/validation-v1.0.0.md)
-- [v1.1.0 validation summary](docs/validation-v1.1.0.md)
-- [v1.1.1 fix validation summary](docs/validation-v1.1.1.md)
-- [v1.1.2 fix validation summary](docs/validation-v1.1.2.md)
-- [v1.2.0 PDF conversion validation summary](docs/validation-v1.2.0.md)
-- [v1.5.1 container compatibility validation summary](docs/validation-v1.5.1.md)
+- [GUI guide](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/gui.en.md)
+- [Limitations and compatibility](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/limitations.md)
+- [Compatibility record](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/compatibility.md)
+- [Jnotes file format](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-jnotes.md)
+- [Huawei Notes file format](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/format-hinote.md)
+- [Conversion mapping rules](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/mapping.md)
+- [v1.0.0 validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.0.0.md)
+- [v1.1.0 validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.0.md)
+- [v1.1.1 fix validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.1.md)
+- [v1.1.2 fix validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.1.2.md)
+- [v1.2.0 PDF conversion validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.2.0.md)
+- [v1.5.1 container compatibility validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.1.md)
+- [v1.5.2 thumbnail validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.2.md)
+- [v1.5.3 landscape thumbnail and archive validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.5.3.md)
+- [v1.6.0 safe output and batch-report validation summary](https://github.com/LTong-g/jnote_to_hinote/blob/main/docs/validation-v1.6.0.md)
 
 ## Development
 
@@ -173,8 +178,8 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Before contributing format research or code, read [CONTRIBUTING.md](CONTRIBUTING.md).
+Before contributing format research or code, read [CONTRIBUTING.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/CONTRIBUTING.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/LTong-g/jnote_to_hinote/blob/main/LICENSE).
