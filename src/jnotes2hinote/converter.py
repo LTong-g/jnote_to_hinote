@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Current Jnotes-to-Hinote conversion implementation.
 
 The module contains the current editable-ink serialization, native PDF
@@ -1921,4 +1920,3 @@ __all__ = [
     "parse_jnotes",
     "parse_jnotes_with_info",
 ]
-

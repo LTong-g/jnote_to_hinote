@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read supported Jnotes containers into the converter's in-memory model."""
 from __future__ import annotations
 
@@ -243,4 +242,3 @@ __all__ = [
     "parse_jnotes",
     "parse_jnotes_with_info",
 ]
-
