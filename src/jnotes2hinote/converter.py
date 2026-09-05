@@ -18,14 +18,15 @@ import time
 import uuid
 import zipfile
 from collections import defaultdict
-from collections.abc import Iterable
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 from PIL import Image, JpegImagePlugin
+from pypdf import PdfReader
 
+from ._version import __version__
 from .reader import JNote, JnotesContainerInfo, parse_jnotes, parse_jnotes_with_info
 from .thumbnail import (
     THUMBNAIL_JPEG_SUBSAMPLING,
@@ -35,7 +36,6 @@ from .thumbnail import (
     thumbnail_dimensions,
 )
 
-__version__ = "1.6.0"
 TESTED_JNOTES_VERSION = "3.2.3.2"
 TESTED_HUAWEI_NOTES_VERSION = "15.0.14.295"
 
@@ -66,38 +66,7 @@ def gzip_json(obj: Any) -> bytes:
     return gzip.compress(raw, compresslevel=6, mtime=0)
 
 
-def java_utf_read(data: bytes, pos: int) -> tuple[str, int]:
-    if pos + 2 > len(data):
-        raise EOFError
-    n = struct.unpack_from(">H", data, pos)[0]
-    pos += 2
-    if pos + n > len(data):
-        raise EOFError
-    s = data[pos : pos + n].decode("utf-8", errors="replace")
-    return s, pos + n
-
-
-@dataclass(frozen=True)
-class StrokeTemplate:
-    style: bytes
-    point_header: bytes
-    points: tuple[bytes, ...]
-
-    @property
-    def count(self) -> int:
-        return len(self.points)
-
-
-@dataclass(frozen=True)
-class ShapeTemplate:
-    shape_code: int
-    style: bytes
-    point_header: bytes
-    points: tuple[bytes, ...]
-
-    @property
-    def count(self) -> int:
-        return len(self.points)
+# PENCILENGINE binary structure
 
 
 def _parse_normal_pencilengine(data: bytes) -> list[tuple[int, int, int, int, int, int]]:
@@ -125,123 +94,7 @@ def _parse_normal_pencilengine(data: bytes) -> list[tuple[int, int, int, int, in
     return blocks
 
 
-def _parse_shape_reference(data: bytes) -> list[tuple[int, int, int, int, int, int]]:
-    """解析华为原生图形页面中的笔迹主体。
-
-    原生图形页面可能在最后一条笔迹之后带有扩展 UUID 索引，因此笔迹数量
-    取自 header+112，而不是扫描到标准的 12 字节尾标记。
-    """
-    if not data.startswith(b"PENCILENGINE"):
-        raise ValueError("不是 PENCILENGINE 二进制文件")
-    n = struct.unpack_from(">I", data, 112)[0]
-    blocks: list[tuple[int, int, int, int, int, int]] = []
-    pos = 196
-    for _ in range(n):
-        ph = pos + 108
-        prefix, count, stride, reserved = struct.unpack_from(">IIII", data, ph)
-        if prefix not in (0, 2) or not (2 <= count <= 20000) or stride != 36 or reserved != 0:
-            raise ValueError(f"图形参考数据在 {pos} 处出现异常数据块")
-        ps = ph + 16
-        pe = ps + count * 36
-        end = pe + 64
-        blocks.append((pos, ph, count, ps, pe, end))
-        pos = end
-    return blocks
-
-
-class HuaweiReferenceTemplates:
-    """提取用户自己的华为二进制模板。
-
-    普通参考文件应包含 pen_type 1/2/3/5 的示例。当源笔记包含 Jnotes
-    type 6/7 几何图形时，图形参考文件应包含原生图形代码 0/7/10/16。
-    """
-
-    def __init__(self, normal_reference: Path, shape_reference: Path | None = None):
-        self.normal_reference = normal_reference
-        self.shape_reference = shape_reference
-        self.header: bytes
-        self.trailer: bytes
-        self.pen_templates: dict[int, list[StrokeTemplate]] = defaultdict(list)
-        self.shape_templates: dict[int, ShapeTemplate] = {}
-        self._load_normal(normal_reference)
-        if shape_reference is not None:
-            self._load_shapes(shape_reference)
-
-    @staticmethod
-    def _all_bins(path: Path) -> list[bytes]:
-        with zipfile.ZipFile(path) as z:
-            return [z.read(n) for n in z.namelist() if n.startswith("files/") and n.endswith(".bin")]
-
-    def _load_normal(self, path: Path) -> None:
-        bins = self._all_bins(path)
-        if not bins:
-            raise ValueError("普通参考 .hinote 不包含 PENCILENGINE .bin 文件")
-
-        first_good: bytes | None = None
-        for data in bins:
-            try:
-                blocks = _parse_normal_pencilengine(data)
-            except ValueError:
-                continue
-            if not blocks:
-                continue
-            first_good = first_good or data
-            for ss, ph, count, ps, _pe, _end in blocks:
-                style = data[ss:ph]
-                pen_type = struct.unpack_from(">I", style, 56)[0]
-                if pen_type not in (1, 2, 3, 4, 5, 11, 12, 13):
-                    continue
-                pts = tuple(data[ps + i * 36 : ps + (i + 1) * 36] for i in range(count))
-                self.pen_templates[pen_type].append(StrokeTemplate(style, data[ph:ps], pts))
-
-        if first_good is None:
-            raise ValueError("无法从普通参考文件解析标准 PENCILENGINE 链")
-        self.header = first_good[:196]
-        self.trailer = first_good[-12:]
-
-        required = {1, 2, 3, 5}
-        missing = sorted(required.difference(self.pen_templates))
-        if missing:
-            raise ValueError(
-                "普通参考文件缺少必需的华为笔型："
-                + ", ".join(map(str, missing))
-            )
-
-    def _load_shapes(self, path: Path) -> None:
-        bins = self._all_bins(path)
-        for data in bins:
-            try:
-                blocks = _parse_shape_reference(data)
-            except (ValueError, struct.error):
-                continue
-            for ss, ph, count, ps, _pe, _end in blocks:
-                style = data[ss:ph]
-                pen_type = struct.unpack_from(">I", style, 56)[0]
-                shape_code = struct.unpack_from(">I", style, 8)[0]
-                if pen_type != 2 or shape_code not in (0, 7, 10, 16):
-                    continue
-                if shape_code in self.shape_templates:
-                    continue
-                pts = tuple(data[ps + i * 36 : ps + (i + 1) * 36] for i in range(count))
-                self.shape_templates[shape_code] = ShapeTemplate(shape_code, style, data[ph:ps], pts)
-
-    def choose_pen(self, pen_type: int, desired_count: int) -> StrokeTemplate:
-        choices = self.pen_templates.get(pen_type)
-        if not choices:
-            choices = self.pen_templates.get(2)
-        if not choices:
-            raise ValueError(f"没有可用于 pen_type={pen_type} 的华为模板")
-        return min(choices, key=lambda t: abs(t.count - desired_count))
-
-    def require_shapes(self, codes: Iterable[int]) -> None:
-        missing = sorted(set(codes).difference(self.shape_templates))
-        if missing:
-            raise ValueError(
-                "图形参考文件缺少必需的原生图形代码："
-                + ", ".join(map(str, missing))
-                + "。请创建/导出一份包含直线、曲线、矩形和圆图形的华为笔记，"
-                "然后通过 --shape-reference-hinote 传入。"
-            )
+# Ink and geometry serialization
 
 
 J_TO_HW_PEN = {
@@ -312,14 +165,6 @@ def _end_tail(cur_count: int, stroke_uuid: bytes) -> bytes:
     t[56:60] = u32be(0)
     t[60:64] = u32be(0)
     return bytes(t)
-
-
-def _resample_source_points(points: list[dict[str, Any]], n: int) -> list[dict[str, Any]]:
-    if not points:
-        return [{"x": 0.0, "y": 0.0, "p": 0.2}] * n
-    if len(points) == 1:
-        return [points[0]] * n
-    return [points[round(i * (len(points) - 1) / (n - 1))] for i in range(n)]
 
 
 def _resample_xy(points: list[dict[str, Any]], n: int) -> list[tuple[float, float]]:
@@ -619,6 +464,9 @@ def build_pencilengine(strokes: list[dict[str, Any]], sx: float) -> tuple[bytes,
             raise AssertionError("PENCILENGINE 后续指针 B 验证失败")
     return result, stats
 
+# Page elements and backgrounds
+
+
 def image_ext(data: bytes) -> str:
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
         return ".png"
@@ -769,6 +617,9 @@ def detail_map(files: dict[str, bytes]) -> str:
     return json.dumps(m, ensure_ascii=False, separators=(",", ":"))
 
 
+# Native PDF handling
+
+
 @dataclass(frozen=True)
 class PdfAsset:
     """A source PDF record and its validated page count."""
@@ -795,14 +646,6 @@ def _pdf_page_count(payload: bytes) -> int:
     """Validate a PDF and return its page count without rendering it."""
     if not payload.startswith(b"%PDF-"):
         raise ValueError("Jnotes PDF 记录不是合法 PDF：缺少 %PDF- 文件头")
-
-    try:
-        from pypdf import PdfReader
-    except ImportError:
-        try:
-            from PyPDF2 import PdfReader
-        except ImportError as exc:  # pragma: no cover - packaging/install error
-            raise RuntimeError("PDF 转换需要 pypdf 或 PyPDF2，请先安装项目依赖") from exc
 
     try:
         reader = PdfReader(BytesIO(payload), strict=False)
@@ -1013,6 +856,9 @@ def _validate_pdf_archive(
             if hashlib.sha256(asset.payload).hexdigest().upper() not in md_hashes:
                 raise ValueError("PDF 文件未写入 custom_md.jhinote")
 
+# Hinote archive assembly
+
+
 def _render_initial_thumbnail(
     jn: JNote,
     page: dict[str, Any],
@@ -1056,7 +902,7 @@ def _result_metadata(
     pdf_stats: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     result: dict[str, Any] = {
-        "converterVersion": __version__,
+        "version": __version__,
         "referenceHinoteRequired": False,
         "testedVersions": {
             "jnotes": TESTED_JNOTES_VERSION,
@@ -1607,6 +1453,9 @@ def _convert_content(
         jnotes_path, output, jn, pages_src, source_info, assets, bindings, pdf_stats,
     )
 
+# Final thumbnail and orientation normalization
+
+
 def _thumbnail_name(value: str) -> str:
     return PurePosixPath(value).name if value else ""
 
@@ -1838,7 +1687,11 @@ def _validate_thumbnails(archive_path: Path) -> None:
             if detail_map.get(name) != [file_info(name, data)]:
                 raise ValueError(f"Hinote 缩略图 detailFileMap 哈希不正确：{name}")
 
-def _convert_current(jnotes_path: Path, output: Path, page_limit: int | None = None) -> dict[str, Any]:
+def _convert_with_normalized_thumbnails(
+    jnotes_path: Path,
+    output: Path,
+    page_limit: int | None = None,
+) -> dict[str, Any]:
     """Convert a Jnotes file using orientation-safe native-quality thumbnails."""
     jn, _ = parse_jnotes_with_info(jnotes_path)
     pages_src = jn.pages[:page_limit] if page_limit else jn.pages
@@ -1860,7 +1713,6 @@ def _convert_current(jnotes_path: Path, output: Path, page_limit: int | None = N
         temporary.replace(output)
     finally:
         temporary.unlink(missing_ok=True)
-    result["converterVersion"] = __version__
     result["output"] = str(output)
     result["outputBytes"] = output.stat().st_size
     first_width, first_height, _ = _page_geometry(jn, pages_src[0])
@@ -1877,6 +1729,9 @@ def _convert_current(jnotes_path: Path, output: Path, page_limit: int | None = N
         "jpegQuality": 100,
     }
     return result
+
+# Public conversion entry point
+
 
 def ensure_hinote_suffix(path: Path) -> Path:
     """Append ``.hinote`` unless the path already has that final suffix."""
@@ -1896,16 +1751,13 @@ def _same_file(source: Path, destination: Path) -> bool:
 
 
 def convert(jnotes_path: Path, output: Path, page_limit: int | None = None) -> dict[str, Any]:
-    """Convert through v1.5.3 after normalizing and validating the output path."""
+    """Convert a Jnotes notebook after validating the requested output path."""
     jnotes_path = Path(jnotes_path)
     output = ensure_hinote_suffix(Path(output))
     if _same_file(jnotes_path, output):
         raise ValueError("输出文件不能与源 Jnotes 文件相同")
-    result = _convert_current(jnotes_path, output, page_limit=page_limit)
-    result["converterVersion"] = __version__
-    result["output"] = str(output)
-    result["outputBytes"] = output.stat().st_size
-    return result
+    return _convert_with_normalized_thumbnails(jnotes_path, output, page_limit=page_limit)
+
 
 __all__ = [
     "TESTED_HUAWEI_NOTES_VERSION",
@@ -1914,7 +1766,6 @@ __all__ = [
     "JnotesContainerInfo",
     "PdfAsset",
     "PdfPageBinding",
-    "__version__",
     "convert",
     "ensure_hinote_suffix",
     "parse_jnotes",

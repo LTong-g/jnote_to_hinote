@@ -18,10 +18,18 @@ def _configure_frozen_tk() -> None:
 _configure_frozen_tk()
 
 
-def _run_pdfium_self_test() -> int:
+def _run_runtime_self_test() -> int:
     try:
+        import pypdf  # noqa: F401
         import pypdfium2  # noqa: F401
         import pypdfium2_raw  # noqa: F401
+
+        from jnotes2hinote.gui import create_root
+
+        root = create_root()
+        root.withdraw()
+        root.update_idletasks()
+        root.destroy()
     except Exception:  # noqa: BLE001 - self-test must report every frozen-runtime failure
         log_path = os.environ.get("JNOTES2HINOTE_SELF_TEST_LOG")
         if log_path:
@@ -34,8 +42,8 @@ def _run_pdfium_self_test() -> int:
 
 
 if __name__ == "__main__":
-    if "--self-test-pdfium" in sys.argv[1:]:
-        raise SystemExit(_run_pdfium_self_test())
+    if "--self-test-runtime" in sys.argv[1:]:
+        raise SystemExit(_run_runtime_self_test())
     from jnotes2hinote.gui import main
 
     main()

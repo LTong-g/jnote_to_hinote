@@ -14,6 +14,11 @@ Chinese version: [README.md](https://github.com/LTong-g/jnote_to_hinote/blob/mai
 
 If you simply want to convert notebooks, use the GUI. It can add multiple files, folders or a text path list, and shows conversion progress, successful results and errors.
 
+Download `Jnotes2Hinote-Windows.zip` from
+[GitHub Releases](https://github.com/LTong-g/jnote_to_hinote/releases). Extract
+the complete directory and run `Jnotes2Hinote.exe`; do not copy the executable
+by itself.
+
 ### Using the Windows packaged version
 
 If you have the Windows packaged version, run:

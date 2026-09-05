@@ -71,6 +71,6 @@ Install the optional build dependency and run:
 ./scripts/build_windows.ps1
 ```
 
-The script produces a no-console Windows application directory. Run `dist/Jnotes2Hinote/Jnotes2Hinote.exe` and keep the runtime files in the `dist/Jnotes2Hinote` directory. The packaged application uses the current v1.6.0 conversion core. The Windows build path supports PyInstaller 5.13 or newer.
+The script produces a no-console Windows application directory. Run `dist/Jnotes2Hinote/Jnotes2Hinote.exe` and keep the runtime files in the `dist/Jnotes2Hinote` directory. The packaged application version matches the project version. The Windows build path supports PyInstaller 5.13 or newer.
 
 Run `./scripts/clean_build.ps1` to remove intermediate build files. Add `-IncludeDist` explicitly to remove the release directory too, and use `-WhatIf` to preview the affected directories.

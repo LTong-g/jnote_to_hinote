@@ -51,6 +51,7 @@ $excludeModules = @(
     "jupyter",
     "pytest",
     "ruff",
+    "cryptography",
     "setuptools",
     "pkg_resources",
     "cffi",
@@ -71,12 +72,19 @@ $pyInstallerArgs = @(
     "--workpath", "build\pyinstaller",
     "--specpath", "build\pyinstaller",
     "--additional-hooks-dir", "scripts\pyinstaller-hooks",
-    "--hidden-import", "pypdf",
     "--hidden-import", "pypdfium2",
     "--hidden-import", "pypdfium2_raw"
 )
 foreach ($module in $excludeModules) {
     $pyInstallerArgs += @("--exclude-module", $module)
+}
+$bundleDirectory = Join-Path $repoRoot "dist\Jnotes2Hinote"
+$expectedBundleDirectory = [IO.Path]::GetFullPath((Join-Path $repoRoot "dist\Jnotes2Hinote"))
+if ([IO.Path]::GetFullPath($bundleDirectory) -ne $expectedBundleDirectory) {
+    throw "Refusing to clean unexpected bundle path: $bundleDirectory"
+}
+if (Test-Path -LiteralPath $bundleDirectory -PathType Container) {
+    Remove-Item -LiteralPath $bundleDirectory -Recurse -Force
 }
 $staleSingleFile = Join-Path $repoRoot "dist\Jnotes2Hinote.exe"
 if (Test-Path -LiteralPath $staleSingleFile -PathType Leaf) {
@@ -130,18 +138,18 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $builtExe = Join-Path $repoRoot "dist\Jnotes2Hinote\Jnotes2Hinote.exe"
-$selfTestLog = Join-Path $repoRoot "build\pypdfium2-self-test.log"
+$selfTestLog = Join-Path $repoRoot "build\runtime-self-test.log"
 Remove-Item -LiteralPath $selfTestLog -Force -ErrorAction SilentlyContinue
 $env:JNOTES2HINOTE_SELF_TEST_LOG = $selfTestLog
-$pdfiumSelfTest = Start-Process -FilePath $builtExe -ArgumentList "--self-test-pdfium" -WindowStyle Hidden -Wait -PassThru
+$runtimeSelfTest = Start-Process -FilePath $builtExe -ArgumentList "--self-test-runtime" -WindowStyle Hidden -Wait -PassThru
 Remove-Item Env:JNOTES2HINOTE_SELF_TEST_LOG -ErrorAction SilentlyContinue
-if ($pdfiumSelfTest.ExitCode -ne 0) {
+if ($runtimeSelfTest.ExitCode -ne 0) {
     $selfTestDetail = if (Test-Path -LiteralPath $selfTestLog) {
         Get-Content -LiteralPath $selfTestLog -Raw
     } else {
         "No diagnostic log was generated."
     }
-    throw "Packaged pypdfium2 self-test failed with exit code $($pdfiumSelfTest.ExitCode):`n$selfTestDetail"
+    throw "Packaged runtime self-test failed with exit code $($runtimeSelfTest.ExitCode):`n$selfTestDetail"
 }
 
 Write-Output "Built and verified dist\Jnotes2Hinote\Jnotes2Hinote.exe"

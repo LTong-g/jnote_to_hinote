@@ -14,6 +14,10 @@ v1.6.0 保留 v1.5.3 的高清缩略图和横向页结构，并保证单文件�
 
 如果你只是想转换笔记，建议使用图形界面。它支持选择多个文件、文件夹或路径清单，并会显示转换进度、成功结果和错误信息。
 
+正式 Windows 版本可从 [GitHub Releases](https://github.com/LTong-g/jnote_to_hinote/releases)
+下载 `Jnotes2Hinote-Windows.zip`。解压完整目录后运行其中的
+`Jnotes2Hinote.exe`，不要只复制 exe 文件。
+
 ### 使用 Windows 打包版
 
 如果你拿到的是 Windows 打包版，请运行：

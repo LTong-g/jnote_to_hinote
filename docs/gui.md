@@ -83,6 +83,6 @@ TXT 清单中的空行和以 `#` 开头的行会被忽略。相对路径以 TXT 
 ./scripts/build_windows.ps1
 ```
 
-生成的程序位于 `dist/Jnotes2Hinote/Jnotes2Hinote.exe`。请保留 `dist/Jnotes2Hinote` 目录中的运行库文件；打包程序使用当前的 v1.6.0 转换核心。当前 Windows 构建路径支持 PyInstaller 5.13 及以上版本。
+生成的程序位于 `dist/Jnotes2Hinote/Jnotes2Hinote.exe`。请保留 `dist/Jnotes2Hinote` 目录中的运行库文件；打包程序版本与项目版本一致。当前 Windows 构建路径支持 PyInstaller 5.13 及以上版本。
 
 只清理构建中间文件时运行 `./scripts/clean_build.ps1`；同时删除 `dist` 发布目录时必须显式增加 `-IncludeDist`。可先使用 `-WhatIf` 查看将删除的目录。

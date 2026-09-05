@@ -75,7 +75,8 @@ def test_converter_converts_both_container_names(tmp_path: Path, entry_name: str
     result = convert(source, output)
 
     assert output.is_file()
-    assert result["converterVersion"] == "1.6.0"
+    assert result["version"] == "1.6.0"
+    assert "converterVersion" not in result
     assert result["sourceContainer"]["entry"] == entry_name
     assert result["pages"] == 1
 
@@ -155,4 +156,3 @@ def test_converter_never_replaces_same_named_source(tmp_path: Path):
 
     assert source.read_bytes() == original
     assert result["output"] == str(tmp_path / "source.Jnotes.hinote")
-

@@ -21,3 +21,9 @@ python -m pytest
 Windows 打包路径支持 PyInstaller 5.13 及以上版本。运行
 scripts/clean_build.ps1 -WhatIf 可预览构建目录清理；只有显式增加
 -IncludeDist 才会删除 dist。
+
+## Windows 发布
+
+- 普通分支提交只运行 CI，不构建 Windows 程序。
+- 推送 `v*` 标签会构建并验证 `Jnotes2Hinote-Windows.zip`，然后创建或更新同名 GitHub Release。
+- 手动运行 Windows package 工作流时，留空 `release_tag` 只生成 Actions artifact；填写已有标签则同时发布 Release。

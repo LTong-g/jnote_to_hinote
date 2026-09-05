@@ -132,7 +132,7 @@ def test_pdf_is_embedded_and_pages_reference_it(tmp_path: Path):
 
     result = convert(source, output)
 
-    assert result["converterVersion"] == "1.6.0"
+    assert result["version"] == "1.6.0"
     assert result["pdfStats"]["pdfBackedPages"] == 2
     assert result["pdfStats"]["sourcePdfSha256"]["import note.pdf"] == hashlib.sha256(pdf).hexdigest()
 
@@ -196,7 +196,7 @@ def test_converter_preserves_pdf_for_zip_jnotes_variant(tmp_path: Path):
     output = tmp_path / "variant.hinote"
     result = convert(variant, output)
 
-    assert result["converterVersion"] == "1.6.0"
+    assert result["version"] == "1.6.0"
     assert result["sourceContainer"]["entry"] == "zip.Jnotes"
     assert result["pdfStats"]["sourcePdfSha256"]["import note.pdf"] == hashlib.sha256(pdf).hexdigest()
     with zipfile.ZipFile(output) as archive:
