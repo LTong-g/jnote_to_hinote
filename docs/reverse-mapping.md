@@ -21,7 +21,8 @@ Hinote2Jnotes 接受 `.hinote` 和 `.hjnote`，按 ZIP 内的笔记和页面元�
 源码启动入口为 `python -m hinote2jnotes.gui`，CLI 为
 `python -m hinote2jnotes`。Windows 构建使用
 `./scripts/build_windows.ps1 -Tool Hinote2Jnotes`，生成
-`dist/Hinote2Jnotes/Hinote2Jnotes.exe`。
+`dist/Hinote2Jnotes/Hinote2Jnotes.exe` 和 `dist/Hinote2Jnotes-Windows.zip`。
+解压 ZIP 后，`Hinote2Jnotes.exe` 与 `_internal` 运行库文件夹位于同一级。
 
 自动化测试检查生成的记录、页序、可编辑对象、媒体字节和 PDF 页引用。
 云记实机导入仍待验证。

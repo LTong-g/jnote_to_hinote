@@ -28,19 +28,12 @@ jobs:
           cache: pip
       - run: python -m pip install -e ".[dev,build]"
       - run: python -m pytest
-      - name: Build and verify Windows package
+      - name: Build, verify and archive both Windows packages
         shell: powershell
         run: |
           $env:JNOTES2HINOTE_PYTHON = (Get-Command python).Source
           ./scripts/build_windows.ps1
           ./scripts/build_windows.ps1 -Tool Hinote2Jnotes
-      - name: Create release archives
-        shell: powershell
-        run: |
-          $archive = "dist\Jnotes2Hinote-Windows.zip"
-          Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
-          Compress-Archive -LiteralPath "dist\Jnotes2Hinote" -DestinationPath $archive -CompressionLevel Optimal
-          Compress-Archive -LiteralPath "dist\Hinote2Jnotes" -DestinationPath "dist\Hinote2Jnotes-Windows.zip" -Force -CompressionLevel Optimal
       - uses: actions/upload-artifact@v4
         with:
           name: Jnotes2Hinote-Windows

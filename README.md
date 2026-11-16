@@ -12,8 +12,8 @@ v1.7.0 保留 v1.6.0 的转换行为，简化历史转换架构并统一版本�
 
 ## 反向转换（华为笔记 → 云记）
 
-同一项目提供独立的 Hinote2Jnotes 工具。Windows 版运行
-`Hinote2Jnotes.exe`，保留同目录的运行文件。从源码安装后运行
+同一项目提供独立的 Hinote2Jnotes 工具。解压 Windows 包后运行根目录中的
+`Hinote2Jnotes.exe`，保留旁边的 `_internal` 运行库文件夹。从源码安装后运行
 `hinote2jnotes-gui`，也可以使用 `python -m hinote2jnotes.gui`。
 界面与正向工具使用相同布局，支持拖入文件、目录或 TXT 清单，并提供独立的设置。
 
@@ -33,8 +33,8 @@ hinote2jnotes notes output --recursive --report conversion-report.json
 如果你只是想转换笔记，建议使用图形界面。它支持选择多个文件、文件夹或路径清单，并会显示转换进度、成功结果和错误信息。
 
 正式 Windows 版本可从 [GitHub Releases](https://github.com/LTong-g/jnote_to_hinote/releases)
-下载 `Jnotes2Hinote-Windows.zip`。解压完整目录后运行其中的
-`Jnotes2Hinote.exe`，不要只复制 exe 文件。
+下载 `Jnotes2Hinote-Windows.zip`。解压后运行根目录中的
+`Jnotes2Hinote.exe`，保留旁边的 `_internal` 运行库文件夹。
 
 ### 使用 Windows 打包版
 
@@ -44,7 +44,7 @@ hinote2jnotes notes output --recursive --report conversion-report.json
 dist/Jnotes2Hinote/Jnotes2Hinote.exe
 ```
 
-请保留 `Jnotes2Hinote` 文件夹中的其他文件，不能只复制 exe 文件。打包版不需要另外安装 Python。
+请将 `_internal` 文件夹与 exe 放在同一目录。打包版不需要另外安装 Python。
 
 ### 从源码启动
 

@@ -2,8 +2,8 @@
 
 ## Huawei Notes → Jnotes
 
-This repository also includes Hinote2Jnotes. Run `Hinote2Jnotes.exe` from
-the Windows bundle, or run `hinote2jnotes-gui` after installing from source.
+This repository also includes Hinote2Jnotes. Extract the Windows bundle and run
+`Hinote2Jnotes.exe` beside its `_internal` folder, or run `hinote2jnotes-gui` after installing from source.
 The desktop app uses the same layout and batch controls as the forward tool.
 
 ```text
@@ -33,8 +33,7 @@ If you simply want to convert notebooks, use the GUI. It can add multiple files,
 
 Download `Jnotes2Hinote-Windows.zip` from
 [GitHub Releases](https://github.com/LTong-g/jnote_to_hinote/releases). Extract
-the complete directory and run `Jnotes2Hinote.exe`; do not copy the executable
-by itself.
+the archive and run `Jnotes2Hinote.exe` beside its `_internal` folder.
 
 ### Using the Windows packaged version
 
@@ -44,7 +43,7 @@ If you have the Windows packaged version, run:
 dist/Jnotes2Hinote/Jnotes2Hinote.exe
 ```
 
-Keep the other files in the `Jnotes2Hinote` folder. Do not copy only the exe file. The packaged version does not require a separate Python installation.
+Keep the `_internal` folder beside the executable. The packaged version does not require a separate Python installation.
 
 ### Running from source
 

@@ -45,7 +45,7 @@ dev = [
   "ruff>=0.6"
 ]
 build = [
-  "pyinstaller>=5.13"
+  "pyinstaller>=6.1,<7"
 ]
 
 [project.scripts]

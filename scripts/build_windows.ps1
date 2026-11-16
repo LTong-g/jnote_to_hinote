@@ -29,8 +29,8 @@ import pypdfium2_raw
 import tkinterdnd2
 
 version = tuple(int(part) for part in PyInstaller.__version__.split('.')[:2])
-if version < (5, 13):
-    raise RuntimeError(f'PyInstaller 5.13 or newer is required, found {PyInstaller.__version__}')
+if not (6, 1) <= version < (7, 0):
+    raise RuntimeError(f'PyInstaller 6.1 through 6.x is required, found {PyInstaller.__version__}')
 "@
 $previousErrorActionPreference = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
@@ -72,6 +72,7 @@ $pyInstallerArgs = @(
     "--clean",
     "--windowed",
     "--onedir",
+    "--contents-directory", "_internal",
     "--name", $Tool,
     "--paths", "src",
     "--distpath", "dist",
@@ -88,13 +89,6 @@ $distRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot "dist"))
 $bundleDirectory = [IO.Path]::GetFullPath((Join-Path $distRoot $Tool))
 if ([IO.Path]::GetDirectoryName($bundleDirectory) -ne $distRoot) {
     throw "Refusing to clean unexpected bundle path: $bundleDirectory"
-}
-if (Test-Path -LiteralPath $bundleDirectory -PathType Container) {
-    Remove-Item -LiteralPath $bundleDirectory -Recurse -Force
-}
-$staleSingleFile = Join-Path $distRoot "$Tool.exe"
-if (Test-Path -LiteralPath $staleSingleFile -PathType Leaf) {
-    Remove-Item -LiteralPath $staleSingleFile -Force
 }
 $pythonPrefix = (& $buildPython -c "import sys; print(sys.prefix)").Trim()
 $pdfiumPythonPackageDir = (& $buildPython -c "from pathlib import Path; import pypdfium2; print(Path(pypdfium2.__file__).parent)").Trim()
@@ -145,6 +139,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $builtExe = Join-Path $bundleDirectory "$Tool.exe"
+$runtimeDirectory = Join-Path $bundleDirectory "_internal"
+if (-not (Test-Path -LiteralPath $builtExe -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $runtimeDirectory -PathType Container) -or
+    @(Get-ChildItem -LiteralPath $bundleDirectory -Force).Count -ne 2) {
+    throw "Expected only $Tool.exe and _internal in $bundleDirectory"
+}
+
 $selfTestLog = Join-Path $repoRoot "build\$Tool-runtime-self-test.log"
 Remove-Item -LiteralPath $selfTestLog -Force -ErrorAction SilentlyContinue
 $env:JNOTES2HINOTE_SELF_TEST_LOG = $selfTestLog
@@ -159,4 +160,15 @@ if ($runtimeSelfTest.ExitCode -ne 0) {
     throw "Packaged runtime self-test failed with exit code $($runtimeSelfTest.ExitCode):`n$selfTestDetail"
 }
 
-Write-Output "Built and verified dist\$Tool\$Tool.exe"
+$archive = Join-Path $distRoot "$Tool-Windows.zip"
+Push-Location -LiteralPath $bundleDirectory
+try {
+    & $buildPython -m zipfile -c $archive "$Tool.exe" "_internal"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to create $archive (exit code $LASTEXITCODE)"
+    }
+} finally {
+    Pop-Location
+}
+
+Write-Output "Built and verified dist\$Tool\$Tool.exe and created $archive"
