@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "jnotes2hinote"
 version = "1.7.0"
-description = "将经过设备验证的 Jideos 云记（.Jnotes）转换为华为笔记（.hinote），并保留原生可编辑笔迹"
+description = "双向转换云记（.Jnotes）与华为笔记（.hinote），保留受支持的可编辑笔迹"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -50,9 +50,11 @@ build = [
 
 [project.scripts]
 jnotes2hinote = "jnotes2hinote.cli:main"
+hinote2jnotes = "hinote2jnotes.cli:main"
 
 [project.gui-scripts]
 jnotes2hinote-gui = "jnotes2hinote.gui:main"
+hinote2jnotes-gui = "hinote2jnotes.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

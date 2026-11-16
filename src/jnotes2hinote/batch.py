@@ -63,6 +63,8 @@ def collect_input_files(
     *,
     recursive: bool = False,
     source_counts: dict[str, int] | None = None,
+    suffixes: set[str] = JNOTES_SUFFIXES,
+    format_name: str = "Jnotes",
 ) -> tuple[list[Path], list[dict[str, str]]]:
     """Collect Jnotes files from files, directories and text path lists.
 
@@ -75,10 +77,14 @@ def collect_input_files(
     files: list[Path] = []
     errors: list[dict[str, str]] = []
     seen: set[Path] = set()
+    active_manifests: set[Path] = set()
+
+    def is_input_file(path: Path) -> bool:
+        return path.suffix.casefold() in suffixes and path.is_file()
 
     def add_file(path: Path, origin: str) -> None:
-        if not is_jnotes_file(path):
-            raise ValueError(f"不是受支持的 Jnotes 文件：{path}")
+        if not is_input_file(path):
+            raise ValueError(f"不是受支持的 {format_name} 文件：{path}")
         resolved = path.resolve()
         if resolved not in seen:
             seen.add(resolved)
@@ -90,38 +96,40 @@ def collect_input_files(
         path = path.expanduser()
         if path.is_file():
             if path.suffix.lower() == ".txt":
-                listed = 0
-                for line_number, raw_line in enumerate(
-                    path.read_text(encoding="utf-8-sig").splitlines(),
-                    start=1,
-                ):
-                    value = clean_manifest_line(raw_line)
-                    if not value or value.startswith("#"):
-                        continue
-                    listed += 1
-                    listed_path = Path(value)
-                    if not listed_path.is_absolute():
-                        listed_path = path.parent / listed_path
-                    try:
-                        visit(listed_path, origin)
-                    except Exception as exc:  # noqa: BLE001 - one bad manifest entry must not abort collection
-                        record_error(errors, f"{path}:{line_number}", exc, kind="input_error")
-                if listed == 0:
-                    raise ValueError(f"路径清单为空：{path}")
+                manifest = path.resolve()
+                if manifest in active_manifests:
+                    raise ValueError(f"路径清单循环引用：{path}")
+                active_manifests.add(manifest)
+                try:
+                    listed = False
+                    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+                        value = clean_manifest_line(raw_line)
+                        if not value or value.startswith("#"):
+                            continue
+                        listed = True
+                        listed_path = path.parent / Path(value)
+                        try:
+                            visit(listed_path, origin)
+                        except Exception as exc:  # noqa: BLE001 - isolate bad manifest entries
+                            record_error(errors, f"{path}:{line_number}", exc, kind="input_error")
+                    if not listed:
+                        raise ValueError(f"路径清单为空：{path}")
+                finally:
+                    active_manifests.remove(manifest)
                 return
             add_file(path, origin)
             return
 
         if path.is_dir():
             candidates = path.rglob("*") if recursive else path.iterdir()
-            jnotes_files = sorted(
-                (candidate for candidate in candidates if is_jnotes_file(candidate)),
+            input_files = sorted(
+                (candidate for candidate in candidates if is_input_file(candidate)),
                 key=lambda candidate: str(candidate).casefold(),
             )
-            if not jnotes_files:
+            if not input_files:
                 level = "及其子目录" if recursive else "的直接子级"
-                raise ValueError(f"目录{level}中没有 Jnotes 文件：{path}")
-            for candidate in jnotes_files:
+                raise ValueError(f"目录{level}中没有 {format_name} 文件：{path}")
+            for candidate in input_files:
                 add_file(candidate, origin)
             return
 
@@ -136,11 +144,11 @@ def collect_input_files(
     return files, errors
 
 
-def _next_name(stem: str, used_names: set[str]) -> str:
-    name = f"{stem}.hinote"
+def _next_name(stem: str, used_names: set[str], suffix: str) -> str:
+    name = f"{stem}{suffix}"
     index = 2
     while name.casefold() in used_names:
-        name = f"{stem}_{index}.hinote"
+        name = f"{stem}_{index}{suffix}"
         index += 1
     return name
 
@@ -150,6 +158,7 @@ def plan_output_paths(
     output_dir: Path,
     *,
     conflict_strategy: str = CONFLICT_RENAME,
+    output_suffix: str = ".hinote",
 ) -> dict[Path, Path | None]:
     """Plan flat output names and handle existing or duplicate names.
 
@@ -174,7 +183,7 @@ def plan_output_paths(
 
     for input_file in input_files:
         stem = input_file.stem or "output"
-        desired = f"{stem}.hinote"
+        desired = f"{stem}{output_suffix}"
         desired_key = desired.casefold()
 
         if conflict_strategy == CONFLICT_SKIP and (desired_key in existing_names or desired_key in used_names):
@@ -182,9 +191,9 @@ def plan_output_paths(
             continue
 
         if conflict_strategy == CONFLICT_RENAME:
-            name = _next_name(stem, existing_names | used_names)
+            name = _next_name(stem, existing_names | used_names, output_suffix)
         elif desired_key in used_names:
-            name = _next_name(stem, used_names)
+            name = _next_name(stem, used_names, output_suffix)
         else:
             name = desired
 
@@ -204,6 +213,8 @@ def convert_batch(
     initial_errors: list[dict[str, str]] | None = None,
     progress_callback: ProgressCallback | None = None,
     cancel_event: Event | None = None,
+    converter: Callable[..., dict[str, Any]] | None = None,
+    output_suffix: str = ".hinote",
 ) -> dict[str, Any]:
     """Convert files sequentially and continue after per-file failures."""
 
@@ -219,6 +230,7 @@ def convert_batch(
         input_files,
         output_dir,
         conflict_strategy=conflict_strategy,
+        output_suffix=output_suffix,
     )
     total = len(input_files)
     cancelled = False
@@ -238,7 +250,7 @@ def convert_batch(
             continue
 
         try:
-            result = convert(input_file, output_file, page_limit=page_limit)
+            result = (converter or convert)(input_file, output_file, page_limit=page_limit)
         except Exception as exc:  # noqa: BLE001 - batch conversion isolates failures per file
             failed += 1
             record_error(errors, str(input_file), exc, kind="conversion_failed")

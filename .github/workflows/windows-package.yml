@@ -33,16 +33,23 @@ jobs:
         run: |
           $env:JNOTES2HINOTE_PYTHON = (Get-Command python).Source
           ./scripts/build_windows.ps1
-      - name: Create release archive
+          ./scripts/build_windows.ps1 -Tool Hinote2Jnotes
+      - name: Create release archives
         shell: powershell
         run: |
           $archive = "dist\Jnotes2Hinote-Windows.zip"
           Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
           Compress-Archive -LiteralPath "dist\Jnotes2Hinote" -DestinationPath $archive -CompressionLevel Optimal
+          Compress-Archive -LiteralPath "dist\Hinote2Jnotes" -DestinationPath "dist\Hinote2Jnotes-Windows.zip" -Force -CompressionLevel Optimal
       - uses: actions/upload-artifact@v4
         with:
           name: Jnotes2Hinote-Windows
           path: dist/Jnotes2Hinote-Windows.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Hinote2Jnotes-Windows
+          path: dist/Hinote2Jnotes-Windows.zip
           if-no-files-found: error
       - name: Publish GitHub Release
         if: env.RELEASE_TAG != ''
@@ -50,12 +57,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $archive = "dist\Jnotes2Hinote-Windows.zip"
+          $archives = @("dist\Jnotes2Hinote-Windows.zip", "dist\Hinote2Jnotes-Windows.zip")
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $env:RELEASE_TAG $archive --clobber --repo $env:GITHUB_REPOSITORY
+            gh release upload $env:RELEASE_TAG @archives --clobber --repo $env:GITHUB_REPOSITORY
           } else {
-            gh release create $env:RELEASE_TAG $archive --verify-tag --generate-notes --title "Jnotes2Hinote $env:RELEASE_TAG" --repo $env:GITHUB_REPOSITORY
+            gh release create $env:RELEASE_TAG @archives --verify-tag --generate-notes --title "Jnotes2Hinote $env:RELEASE_TAG" --repo $env:GITHUB_REPOSITORY
           }
           if ($LASTEXITCODE -ne 0) {
             throw "Failed to publish GitHub Release $env:RELEASE_TAG"

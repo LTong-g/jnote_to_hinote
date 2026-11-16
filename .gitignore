@@ -20,6 +20,8 @@ Thumbs.db
 *.Jnotes
 *.jnotes
 *.hinote
+*.hjnote
+*.jnote
 references/
 data/
 output/

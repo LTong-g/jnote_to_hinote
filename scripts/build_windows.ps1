@@ -1,3 +1,9 @@
+[CmdletBinding()]
+param(
+    [ValidateSet("Jnotes2Hinote", "Hinote2Jnotes")]
+    [string]$Tool = "Jnotes2Hinote"
+)
+
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -66,7 +72,7 @@ $pyInstallerArgs = @(
     "--clean",
     "--windowed",
     "--onedir",
-    "--name", "Jnotes2Hinote",
+    "--name", $Tool,
     "--paths", "src",
     "--distpath", "dist",
     "--workpath", "build\pyinstaller",
@@ -78,15 +84,15 @@ $pyInstallerArgs = @(
 foreach ($module in $excludeModules) {
     $pyInstallerArgs += @("--exclude-module", $module)
 }
-$bundleDirectory = Join-Path $repoRoot "dist\Jnotes2Hinote"
-$expectedBundleDirectory = [IO.Path]::GetFullPath((Join-Path $repoRoot "dist\Jnotes2Hinote"))
-if ([IO.Path]::GetFullPath($bundleDirectory) -ne $expectedBundleDirectory) {
+$distRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot "dist"))
+$bundleDirectory = [IO.Path]::GetFullPath((Join-Path $distRoot $Tool))
+if ([IO.Path]::GetDirectoryName($bundleDirectory) -ne $distRoot) {
     throw "Refusing to clean unexpected bundle path: $bundleDirectory"
 }
 if (Test-Path -LiteralPath $bundleDirectory -PathType Container) {
     Remove-Item -LiteralPath $bundleDirectory -Recurse -Force
 }
-$staleSingleFile = Join-Path $repoRoot "dist\Jnotes2Hinote.exe"
+$staleSingleFile = Join-Path $distRoot "$Tool.exe"
 if (Test-Path -LiteralPath $staleSingleFile -PathType Leaf) {
     Remove-Item -LiteralPath $staleSingleFile -Force
 }
@@ -131,14 +137,15 @@ foreach ($condaRuntimeBinary in @(
         $pyInstallerArgs += @("--add-binary", "$condaRuntimePath;.")
     }
 }
-$pyInstallerArgs += "scripts\gui_entry.py"
+$entryScript = if ($Tool -eq "Hinote2Jnotes") { "scripts\reverse_gui_entry.py" } else { "scripts\gui_entry.py" }
+$pyInstallerArgs += $entryScript
 & $buildPython -m PyInstaller @pyInstallerArgs
 if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller failed with exit code $LASTEXITCODE"
 }
 
-$builtExe = Join-Path $repoRoot "dist\Jnotes2Hinote\Jnotes2Hinote.exe"
-$selfTestLog = Join-Path $repoRoot "build\runtime-self-test.log"
+$builtExe = Join-Path $bundleDirectory "$Tool.exe"
+$selfTestLog = Join-Path $repoRoot "build\$Tool-runtime-self-test.log"
 Remove-Item -LiteralPath $selfTestLog -Force -ErrorAction SilentlyContinue
 $env:JNOTES2HINOTE_SELF_TEST_LOG = $selfTestLog
 $runtimeSelfTest = Start-Process -FilePath $builtExe -ArgumentList "--self-test-runtime" -WindowStyle Hidden -Wait -PassThru
@@ -152,4 +159,4 @@ if ($runtimeSelfTest.ExitCode -ne 0) {
     throw "Packaged runtime self-test failed with exit code $($runtimeSelfTest.ExitCode):`n$selfTestDetail"
 }
 
-Write-Output "Built and verified dist\Jnotes2Hinote\Jnotes2Hinote.exe"
+Write-Output "Built and verified dist\$Tool\$Tool.exe"

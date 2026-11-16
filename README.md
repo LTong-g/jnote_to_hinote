@@ -10,6 +10,24 @@ v1.7.0 保留 v1.6.0 的转换行为，简化历史转换架构并统一版本�
 
 英文版：[README.en.md](https://github.com/LTong-g/jnote_to_hinote/blob/main/README.en.md)
 
+## 反向转换（华为笔记 → 云记）
+
+同一项目提供独立的 Hinote2Jnotes 工具。Windows 版运行
+`Hinote2Jnotes.exe`，保留同目录的运行文件。从源码安装后运行
+`hinote2jnotes-gui`，也可以使用 `python -m hinote2jnotes.gui`。
+界面与正向工具使用相同布局，支持拖入文件、目录或 TXT 清单，并提供独立的设置。
+
+```text
+hinote2jnotes input.hinote output.Jnotes
+hinote2jnotes notes output --recursive --report conversion-report.json
+```
+
+接受华为笔记导出的 `.hinote` / `.hjnote` 文件，不按应用版本或导出来源筛选。
+根据已知格式还原可编辑笔迹、基础图形、图片、文本和原生 PDF 页。
+无法识别或转换的内容会跳过，并在结果中统计。输出使用已观察到的云记 TRY v2 封包。
+反向输出已通过项目解析器读回，云记实机导入仍待验证。
+详见 [反向转换规则](docs/reverse-mapping.md)。
+
 ## 推荐用法：桌面界面
 
 如果你只是想转换笔记，建议使用图形界面。它支持选择多个文件、文件夹或路径清单，并会显示转换进度、成功结果和错误信息。

@@ -1,5 +1,22 @@
 # Jnotes2Hinote
 
+## Huawei Notes → Jnotes
+
+This repository also includes Hinote2Jnotes. Run `Hinote2Jnotes.exe` from
+the Windows bundle, or run `hinote2jnotes-gui` after installing from source.
+The desktop app uses the same layout and batch controls as the forward tool.
+
+```text
+hinote2jnotes input.hinote output.Jnotes
+hinote2jnotes notes output --recursive --report conversion-report.json
+```
+
+The tool accepts `.hinote` and `.hjnote` exports without an app version
+check. It converts known editable ink, shapes, images, text, and PDF pages,
+and counts unsupported items in the report. The repository parser can read
+the generated TRY v2 archives. Import in the Jnotes app remains unverified.
+See the [reverse mapping](docs/reverse-mapping.md) for format details.
+
 Convert Jnotes notebooks (`.Jnotes` / `.jnote`) into Huawei Notes `.hinote` files, so you can import them into Huawei Notes and continue viewing and editing them.
 
 The currently device-tested version combination is **Jnotes 3.2.3.2 → Huawei Notes 15.0.14.295**. Other versions have not been verified and may produce different results.

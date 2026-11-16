@@ -3,6 +3,7 @@ import pytest
 pytest.importorskip("tkinter")
 import tkinter as tk
 
+from hinote2jnotes.gui import Hinote2JnotesApp
 from jnotes2hinote.gui import Jnotes2HinoteApp, create_root, parse_drop_paths, parse_page_limit
 
 
@@ -52,7 +53,8 @@ def test_parse_drop_paths_returns_empty_for_blank_or_malformed_data():
     assert parse_drop_paths("{unterminated", malformed) == ()
 
 
-def test_layout_paned_windows_own_their_children():
+@pytest.mark.parametrize("app_class", [Jnotes2HinoteApp, Hinote2JnotesApp])
+def test_layout_paned_windows_own_their_children(app_class):
     try:
         root = create_root()
     except tk.TclError:
@@ -60,7 +62,7 @@ def test_layout_paned_windows_own_their_children():
 
     try:
         root.withdraw()
-        app = Jnotes2HinoteApp(root)
+        app = app_class(root)
         for pane_name in app.workspace_pane.panes():
             assert root.nametowidget(pane_name).winfo_parent() == str(app.workspace_pane)
         for pane_name in app.results_log_pane.panes():

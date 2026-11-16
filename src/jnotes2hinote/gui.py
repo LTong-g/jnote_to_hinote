@@ -12,7 +12,7 @@ import tkinter as tk
 from collections.abc import Callable
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Any
+from typing import Any, ClassVar
 
 try:
     from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -25,6 +25,7 @@ from .batch import (
     CONFLICT_OVERWRITE,
     CONFLICT_RENAME,
     CONFLICT_SKIP,
+    JNOTES_SUFFIXES,
     BatchProgress,
     collect_input_files,
     convert_batch,
@@ -249,7 +250,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
 }
 
 
-def config_file_path() -> Path:
+def config_file_path(app_name: str = APP_NAME) -> Path:
     """Return a per-user settings path without touching the repository."""
 
     if os.name == "nt":
@@ -258,18 +259,19 @@ def config_file_path() -> Path:
         base = Path(os.environ["XDG_CONFIG_HOME"])
     else:
         base = Path.home() / ".config"
-    return base / APP_NAME / CONFIG_FILE_NAME
+    return base / app_name / CONFIG_FILE_NAME
 
 
-def load_gui_settings() -> dict[str, Any]:
+def load_gui_settings(app_name: str = APP_NAME) -> dict[str, Any]:
     try:
-        return json.loads(config_file_path().read_text(encoding="utf-8"))
+        settings = json.loads(config_file_path(app_name).read_text(encoding="utf-8"))
+        return settings if isinstance(settings, dict) else {}
     except (OSError, ValueError, TypeError):
         return {}
 
 
-def save_gui_settings(settings: dict[str, Any]) -> None:
-    path = config_file_path()
+def save_gui_settings(settings: dict[str, Any], app_name: str = APP_NAME) -> None:
+    path = config_file_path(app_name)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -316,11 +318,20 @@ def create_root() -> tk.Tk:
 class Jnotes2HinoteApp:
     """Tkinter application controller and view."""
 
+    app_name = APP_NAME
+    translations = TRANSLATIONS
+    input_suffixes = JNOTES_SUFFIXES
+    output_suffixes: ClassVar[set[str]] = {".hinote"}
+    file_pattern = "*.Jnotes *.jnote"
+    collect_files = staticmethod(collect_input_files)
+    run_batch = staticmethod(convert_batch)
+    file_type_label: ClassVar[dict[str, str]] = {LANG_ZH: "Jnotes 文件", LANG_EN: "Jnotes files"}
+
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.settings = load_gui_settings()
+        self.settings = load_gui_settings(self.app_name)
         self.language = self.settings.get("language", LANG_ZH)
-        if self.language not in TRANSLATIONS:
+        if self.language not in self.translations:
             self.language = LANG_ZH
 
         self.sources: list[Path] = []
@@ -369,10 +380,10 @@ class Jnotes2HinoteApp:
         self.root.after(100, self._poll_queue)
 
     def _t(self, key: str, **values: Any) -> str:
-        return TRANSLATIONS[self.language][key].format(**values)
+        return self.translations[self.language][key].format(**values)
 
     def _build_ui(self) -> None:
-        self.root.title(APP_NAME)
+        self.root.title(self.app_name)
         self.root.minsize(1000, 680)
         geometry = self.settings.get("geometry")
         if isinstance(geometry, str) and geometry:
@@ -747,7 +758,7 @@ class Jnotes2HinoteApp:
         self.pending_conflict = (CONFLICT_RENAME, CONFLICT_SKIP, CONFLICT_OVERWRITE)[max(0, index)]
 
     def _source_type_key(self, path: Path) -> str:
-        if path.is_dir() or (not path.exists() and path.suffix.lower() not in {".txt", ".jnotes", ".jnote"}):
+        if path.is_dir() or (not path.exists() and path.suffix.casefold() not in self.input_suffixes | {".txt"}):
             return "type_folder"
         if path.suffix.lower() == ".txt":
             return "type_manifest"
@@ -776,7 +787,7 @@ class Jnotes2HinoteApp:
         added = 0
         for raw_path in paths:
             path = Path(raw_path).expanduser()
-            supported = path.is_dir() or path.suffix.lower() in {".txt", ".jnotes", ".jnote"}
+            supported = path.is_dir() or path.suffix.casefold() in self.input_suffixes | {".txt"}
             if not supported:
                 invalid.append(str(path))
                 continue
@@ -795,7 +806,7 @@ class Jnotes2HinoteApp:
         paths = filedialog.askopenfilenames(
             parent=self.root,
             title=self._t("add_files"),
-            filetypes=[("Jnotes files", "*.Jnotes *.jnote"), ("All files", "*.*")],
+            filetypes=[(self.file_type_label[self.language], self.file_pattern), ("All files", "*.*")],
         )
         self._add_paths(paths)
 
@@ -902,7 +913,7 @@ class Jnotes2HinoteApp:
         if output.exists() and not output.is_dir():
             messagebox.showerror(self._t("fatal_title"), self._t("output_is_file"), parent=self.root)
             return None
-        if output.suffix.lower() == ".hinote" and not output.exists():
+        if output.suffix.casefold() in self.output_suffixes and not output.exists():
             messagebox.showerror(self._t("fatal_title"), self._t("output_file_error"), parent=self.root)
             return None
         try:
@@ -925,6 +936,7 @@ class Jnotes2HinoteApp:
             report_text = self.report_var.get().strip()
             self.pending_report = Path(report_text).expanduser() if report_text else output / "conversion_report.json"
             self.report_var.set(str(self.pending_report))
+        self.pending_redact_report = self.redact_report_var.get()
         self.pending_conflict = self.pending_conflict or CONFLICT_RENAME
         self.pending_page_limit = page_limit
         self.pending_recursive = self.recursive_var.get()
@@ -952,7 +964,7 @@ class Jnotes2HinoteApp:
     def _scan_worker(self, sources: list[Path], recursive: bool) -> None:
         counts: dict[str, int] = {}
         try:
-            files, errors = collect_input_files(
+            files, errors = self.collect_files(
                 sources,
                 recursive=recursive,
                 source_counts=counts,
@@ -975,7 +987,7 @@ class Jnotes2HinoteApp:
 
     def _convert_worker(self) -> None:
         try:
-            summary = convert_batch(
+            summary = self.run_batch(
                 self.pending_files,
                 self.pending_output,
                 page_limit=self.pending_page_limit,
@@ -989,7 +1001,7 @@ class Jnotes2HinoteApp:
             if self.pending_report is not None:
                 try:
                     self.pending_report.parent.mkdir(parents=True, exist_ok=True)
-                    report_payload = redact_report(summary) if self.redact_report_var.get() else summary
+                    report_payload = redact_report(summary) if self.pending_redact_report else summary
                     self.pending_report.write_text(
                         json.dumps(report_payload, ensure_ascii=False, indent=2),
                         encoding="utf-8",
@@ -1057,13 +1069,17 @@ class Jnotes2HinoteApp:
         self.current_var.set(self._t("current_format", path=str(update.source)))
         if update.status == "converted":
             self.completed += 1
+            ignored = int((update.result or {}).get("ignoredTotal", 0))
+            detail = self._t("ignored_objects", count=ignored) if ignored else ""
             self.result_tree.insert(
                 "",
                 "end",
-                values=(str(update.source), str(update.output or ""), self._t("status_converted"), ""),
+                values=(str(update.source), str(update.output or ""), self._t("status_converted"), detail),
                 tags=("converted",),
             )
             self._append_log(self._t("log_file_success", source=update.source, output=update.output))
+            if detail:
+                self._append_log(detail)
         elif update.status == "failed":
             self.failed += 1
             self.result_tree.insert(
@@ -1251,7 +1267,8 @@ class Jnotes2HinoteApp:
                     "open_output": self.open_output_var.get(),
                     "conflict_strategy": self.pending_conflict,
                     "geometry": self.root.geometry(),
-                }
+                },
+                self.app_name,
             )
         except OSError:
             pass
@@ -1265,9 +1282,9 @@ class Jnotes2HinoteApp:
         self.root.destroy()
 
 
-def main() -> None:
+def run_gui(app_class: type[Jnotes2HinoteApp]) -> None:
     root = create_root()
-    app = Jnotes2HinoteApp(root)
+    app = app_class(root)
     root.option_add("*tearoff", False)
     menu = tk.Menu(root)
     help_menu = tk.Menu(menu, tearoff=False)
@@ -1278,6 +1295,10 @@ def main() -> None:
     app.help_menu = help_menu
     root.configure(menu=menu)
     root.mainloop()
+
+
+def main() -> None:
+    run_gui(Jnotes2HinoteApp)
 
 
 if __name__ == "__main__":

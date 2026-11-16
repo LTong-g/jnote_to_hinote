@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -24,23 +25,29 @@ def non_negative_int(value: str) -> int:
     return number
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(
+    program: str = "jnotes2hinote",
+    source_name: str = "Jnotes",
+    example_input: str = "input.Jnotes",
+    input_extensions: str = ".Jnotes/.jnote",
+    output_suffix: str = ".hinote",
+) -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="jnotes2hinote",
-        description="将一个或多个 Jnotes 文件转换为华为笔记 .hinote 文件。",
+        prog=program,
+        description=f"将一个或多个 {source_name} 文件转换为 {output_suffix} 文件。",
         epilog=(
-            "单文件用法：jnotes2hinote input.Jnotes output.hinote；"
-            "批量用法：jnotes2hinote 输入路径... 输出目录。"
+            f"单文件用法：{program} {example_input} output{output_suffix}；"
+            f"批量用法：{program} 输入路径... 输出目录。"
         ),
     )
     p.add_argument(
         "inputs",
         nargs="+",
         type=Path,
-        help="输入的 .Jnotes/.jnote 文件、目录或每行一个路径的 .txt 清单",
+        help=f"输入的 {input_extensions} 文件、目录或每行一个路径的 .txt 清单",
     )
-    p.add_argument("output", type=Path, help="单文件输出的 .hinote 路径，或批量输出目录")
-    p.add_argument("-r", "--recursive", action="store_true", help="递归搜索输入目录中的 Jnotes 文件")
+    p.add_argument("output", type=Path, help=f"单文件输出的 {output_suffix} 路径，或批量输出目录")
+    p.add_argument("-r", "--recursive", action="store_true", help=f"递归搜索输入目录中的 {source_name} 文件")
     p.add_argument("--pages", type=non_negative_int, default=0, help="每个文件只转换前 N 页；0 = 全部")
     p.add_argument("--report", type=Path, default=None, help="写入单个结果或批量汇总 JSON 报告")
     p.add_argument(
@@ -49,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="从 JSON 输出和报告中移除笔记标题及完整路径",
     )
     p.add_argument("--debug", action="store_true", help="转换失败时显示完整 Python 异常信息")
-    p.add_argument("--version", action="version", version=f"jnotes2hinote {__version__}")
+    p.add_argument("--version", action="version", version=f"{program} {__version__}")
     return p
 
 
@@ -72,19 +79,28 @@ def _error_label(error: dict[str, str]) -> str:
     }.get(error.get("kind", ""), "错误")
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_intermixed_args(argv)
+def run_cli(
+    argv: list[str] | None,
+    *,
+    parser: argparse.ArgumentParser,
+    collect_files: Callable[..., Any],
+    convert_file: Callable[..., dict[str, Any]],
+    run_batch: Callable[..., dict[str, Any]],
+    source_name: str,
+    output_suffixes: set[str],
+) -> int:
+    args = parser.parse_intermixed_args(argv)
     input_is_batch = len(args.inputs) > 1 or any(
         path.is_dir() or path.suffix.lower() == ".txt" for path in args.inputs
     )
     output_is_directory = args.output.exists() and args.output.is_dir()
     batch_mode = input_is_batch or output_is_directory
 
-    input_files, errors = collect_input_files(args.inputs, recursive=args.recursive)
+    input_files, errors = collect_files(args.inputs, recursive=args.recursive)
 
     if not batch_mode and len(input_files) == 1 and not errors:
         try:
-            result = convert(input_files[0], args.output, page_limit=args.pages or None)
+            result = convert_file(input_files[0], args.output, page_limit=args.pages or None)
         except Exception as exc:
             if args.debug:
                 raise
@@ -100,21 +116,21 @@ def main(argv: list[str] | None = None) -> int:
             print(f"输入错误：{error['path']}：{error['error']}", file=sys.stderr)
         if not input_files:
             return 1
-        print("单文件模式只能提供一个有效的 Jnotes 文件。", file=sys.stderr)
+        print(f"单文件模式只能提供一个有效的 {source_name} 文件。", file=sys.stderr)
         return 1
 
     if args.output.exists() and not args.output.is_dir():
         print(f"批量转换的输出路径必须是目录：{args.output}", file=sys.stderr)
         return 1
-    if args.output.suffix.lower() == ".hinote" and not args.output.exists():
-        print("批量转换时输出参数必须是目录，而不是 .hinote 文件。", file=sys.stderr)
+    if args.output.suffix.casefold() in output_suffixes and not args.output.exists():
+        print(f"批量转换时输出参数必须是目录，而不是 {args.output.suffix} 文件。", file=sys.stderr)
         return 1
     if not input_files:
         for error in errors:
             print(f"跳过：{error['path']}：{error['error']}", file=sys.stderr)
         return 1
 
-    summary = convert_batch(
+    summary = run_batch(
         input_files,
         args.output,
         page_limit=args.pages or None,
@@ -133,6 +149,13 @@ def main(argv: list[str] | None = None) -> int:
     if problem_count:
         return 2 if summary["converted"] else 1
     return 0 if summary["converted"] else 1
+
+
+def main(argv: list[str] | None = None) -> int:
+    return run_cli(
+        argv, parser=build_parser(), collect_files=collect_input_files, convert_file=convert, run_batch=convert_batch,
+        source_name="Jnotes", output_suffixes={".hinote"},
+    )
 
 
 if __name__ == "__main__":
